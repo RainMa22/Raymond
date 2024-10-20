@@ -1,4 +1,4 @@
-package me.rainma22;
+package me.rainma22.Raymond;
 
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
@@ -53,7 +53,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
         return position;
     }
 
-
     private void loadURL(URL url) throws ExtractionException, IOException {
         System.gc();
         if (url == null) return;
@@ -62,26 +61,19 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 .getStreamExtractor(url.toString());
         extractor.fetchPage();
         AudioStream audioStream = extractor.getAudioStreams().stream().reduce((accumulator, stream) -> {
-//            if (accumulator == null) return stream;
-//            else {
             if (accumulator.getBitrate() < stream.getBitrate()) return stream;
             else return accumulator;
-//            }
         }).get();
         String contentURL = audioStream.getContent();
 
-//        String format = null;
-//        try {
-//            format = audioStream.getFormat().mimeType.split("/")[1];
-//        } catch (Exception e) {
-//            //do nothing
-//        }
-//        System.out.println(format);
-//        byte[] fileData = downloader.get(contentURL, downloadHeader).responseMessage().getBytes(StandardCharsets.US_ASCII);
-//        ffmpegInstance = new FFmpegInstance(contentURL);
         ffmpegInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
         //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
         manager.openAudioConnection(voiceChannel);
+    }
+
+    public void loadNextSong() throws ExtractionException, IOException {
+        songQueue.poll();//remove playing url from queue
+        loadURL(songQueue.peek());
     }
 
     @Override
@@ -93,10 +85,9 @@ public class QueuedMusicHandler implements AudioSendHandler {
         }
         boolean canProvide = nextData != null && nextData.length != 0;
         if (!canProvide) {
-            songQueue.poll();//remove playing url from queue
             try {
-                loadURL(songQueue.peek()); //load next available song
-                return canProvide(); //refresh to see if song can be provided
+                loadNextSong();
+                return !songQueue.isEmpty() && canProvide(); //refresh to see if song can be provided
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;

@@ -1,4 +1,4 @@
-package me.rainma22;
+package me.rainma22.Raymond;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;

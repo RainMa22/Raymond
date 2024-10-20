@@ -1,4 +1,4 @@
-package me.rainma22;
+package me.rainma22.Raymond;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.Channel;
@@ -83,9 +83,6 @@ public class MusicBot extends ListenerAdapter {
                         .queue();
                 return;
             }
-            // Here we finally connect to the target voice channel
-            // and it will automatically start pulling the audio from the MySendHandler instance
-//            manager.openAudioConnection(vc);
         });
     }
 

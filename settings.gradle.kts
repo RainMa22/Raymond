@@ -1,2 +1,2 @@
-rootProject.name = "musicBot"
+rootProject.name = "Raymond"
 
