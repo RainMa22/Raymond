@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimpleFFmpegInstance extends s16beProviderInstance {
+public class FFmpegInstance extends s16beProviderInstance {
     private static final List<String> OUTPARAM_FOR_FFMPEG =
             List.of("-f", "s16be",
                     "-codec:a", "pcm_s16be",
@@ -12,7 +12,7 @@ public class SimpleFFmpegInstance extends s16beProviderInstance {
                     "-ar", "48000",
                     "pipe:1");
     static String ffmpegPath = "ffmpeg";
-    public SimpleFFmpegInstance(String inPath) throws IOException {
+    public FFmpegInstance(String inPath) throws IOException {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
         cmds.addAll(List.of("-i", '"' + inPath + '"'));

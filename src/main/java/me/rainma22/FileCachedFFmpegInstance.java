@@ -23,7 +23,7 @@ public class FileCachedFFmpegInstance extends s16beProviderInstance {
 
     public FileCachedFFmpegInstance(String inPath) throws IOException {
         ArrayList<String> cmds = new ArrayList<>();
-        cmds.add(SimpleFFmpegInstance.ffmpegPath);
+        cmds.add(FFmpegInstance.ffmpegPath);
         cmds.addAll(List.of("-i", '"'+inPath+'"'));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
