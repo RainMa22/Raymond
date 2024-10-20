@@ -18,6 +18,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class QueuedMusicHandler implements AudioSendHandler {
     //    static final String BASE_URL = "https://www.youtube.com/watch?v=";
     private static final int SAMPLE_SIZE = 3840;
+    private static final s16beProviderInstance DUMMIE_PROVIDER = new s16beProviderInstance() {
+        @Override
+        public byte[] provide(int length) throws IOException {
+            return new byte[0];
+        }
+    };
 //    private static Map<String, List<String>> downloadHeader;
 //
 //    static {
@@ -25,7 +31,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
 //    }
 
     private final Downloader downloader;
-    private s16beProviderInstance ffmpegInstance;
+    private s16beProviderInstance providerInstance;
     private byte[] nextData;
     private LinkedBlockingQueue<URL> songQueue;
     private AudioManager manager;
@@ -53,8 +59,21 @@ public class QueuedMusicHandler implements AudioSendHandler {
         return position;
     }
 
+    public URL loadNextSong() {
+        songQueue.poll();//remove playing url from queue
+        URL out = songQueue.peek();
+        if (out == null) {
+            providerInstance = DUMMIE_PROVIDER;
+            return null;
+        }
+        try {
+            loadURL(out);
+        } catch (Exception e) {
+        }
+        return out;
+    }
+
     private void loadURL(URL url) throws ExtractionException, IOException {
-        System.gc();
         if (url == null) return;
         NewPipe.init(downloader, new Localization("CA", "en"));
         YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
@@ -66,20 +85,16 @@ public class QueuedMusicHandler implements AudioSendHandler {
         }).get();
         String contentURL = audioStream.getContent();
 
-        ffmpegInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
+        providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
         //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
         manager.openAudioConnection(voiceChannel);
     }
 
-    public void loadNextSong() throws ExtractionException, IOException {
-        songQueue.poll();//remove playing url from queue
-        loadURL(songQueue.peek());
-    }
 
     @Override
     public boolean canProvide() {
         try {
-            nextData = ffmpegInstance.provide(SAMPLE_SIZE);
+            nextData = providerInstance.provide(SAMPLE_SIZE);
         } catch (Exception e) {
             nextData = null;
         }
