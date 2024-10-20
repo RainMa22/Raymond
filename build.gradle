@@ -1,0 +1,38 @@
+plugins {
+    id("java")
+    id "application"
+    id("com.gradleup.shadow") version "8.3.1"
+}
+application.mainClass = "me.rainma22.Main"
+group = "me.rainma22"
+version = "1.0-SNAPSHOT"
+String jdaVersion = "5.1.2"
+String newPipeVer = "v0.24.2"
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    implementation("net.dv8tion:JDA:$jdaVersion")
+    implementation("ch.qos.logback:logback-classic:1.5.6")
+    implementation("com.github.teamnewpipe:NewPipeExtractor:$newPipeVer")
+    implementation "org.apache.commons:commons-lang3:3.17.0"
+
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+//    options.isIncremental = true
+
+    // Set this to the version of java you want to use,
+    // the minimum required for JDA is 1.8
+    sourceCompatibility = "11"
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
