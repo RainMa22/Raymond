@@ -54,7 +54,8 @@ public class MySendHandler implements AudioSendHandler {
         }
         System.out.println(format);
 //        byte[] fileData = downloader.get(contentURL, downloadHeader).responseMessage().getBytes(StandardCharsets.US_ASCII);
-        ffmpegInstance = new FFmpegInstance(contentURL);
+//        ffmpegInstance = new FFmpegInstance(contentURL);
+        ffmpegInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
         //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
 
     }

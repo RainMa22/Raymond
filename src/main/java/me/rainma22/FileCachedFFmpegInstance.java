@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class FileCachedFFmpegInstance extends s16beProviderInstance {
+public class FileCachedFFmpegInstance extends FFmpegInstance {
 
 
     private ProcessBuilder processBuilder;
@@ -22,8 +22,9 @@ public class FileCachedFFmpegInstance extends s16beProviderInstance {
                     "temp.raw");
 
     public FileCachedFFmpegInstance(String inPath) throws IOException {
+        super(inPath);
         ArrayList<String> cmds = new ArrayList<>();
-        cmds.add(FFmpegInstance.ffmpegPath);
+        cmds.add(ffmpegPath);
         cmds.addAll(List.of("-i", '"'+inPath+'"'));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
