@@ -15,10 +15,11 @@ public class FFmpegInstance extends s16beProviderInstance {
     public FFmpegInstance(String inPath) throws IOException {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
-        cmds.addAll(List.of("-i", '"' + inPath + '"'));
+        cmds.addAll(List.of("-i",  inPath));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
+        System.out.println(processBuilder.command());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process process = processBuilder.start();
         inputStream = process.getInputStream();

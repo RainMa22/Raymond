@@ -52,7 +52,7 @@ public class MySendHandler implements AudioSendHandler {
         } catch (Exception e) {
             //do nothing
         }
-        System.out.println(format);
+//        System.out.println(format);
 //        byte[] fileData = downloader.get(contentURL, downloadHeader).responseMessage().getBytes(StandardCharsets.US_ASCII);
 //        ffmpegInstance = new FFmpegInstance(contentURL);
         ffmpegInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
@@ -67,7 +67,7 @@ public class MySendHandler implements AudioSendHandler {
         } catch (IOException e) {
             return false;
         }
-        return nextData.length != 0;
+        return nextData!= null && nextData.length != 0;
     }
 
     @Override

@@ -12,6 +12,7 @@ public class CachedFFmpegInstance extends FFmpegInstance {
         super(inPath);
         this.frameSize = frameSize;
         blockingQueue = new LinkedBlockingQueue<>();
+
         new loaderThread().start();
     }
 
