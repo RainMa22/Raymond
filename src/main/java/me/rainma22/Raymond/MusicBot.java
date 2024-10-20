@@ -33,6 +33,7 @@ public class MusicBot extends ListenerAdapter {
         // if this is not a bot make sure to check if this message is sent by yourself!
         if (event.getAuthor().isBot()) return;
         String userContent = event.getMessage().getContentRaw();
+        if (!userContent.startsWith("!")) return;
         String[] cmds = userContent.split(" ");
 
         supportedCommands.getOrDefault(cmds[0].toLowerCase(),
