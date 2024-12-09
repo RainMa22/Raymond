@@ -28,7 +28,7 @@ public class SkipCommand implements iCommand{
         if (nextSong == null){
             channel.sendMessage("No More Songs in Queue!").queue();
         }else {
-            channel.sendMessage("Playing: " + nextSong).queue();
+            channel.sendMessage("Song Skipped! Now Playing: " + nextSong).queue();
         }
     }
 }

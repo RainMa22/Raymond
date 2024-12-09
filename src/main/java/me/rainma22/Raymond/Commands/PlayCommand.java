@@ -28,7 +28,7 @@ public class PlayCommand implements iCommand {
         MessageChannelUnion msgChannel = event.getChannel();
         if (cmds.length < 2) {
             msgChannel.sendMessage("No URL found!\n" +
-                    "Usage: !!play [Youtube URL]").queue();
+                    "Usage: !play [Youtube URL]").queue();
             return;
         }
         URL url;
