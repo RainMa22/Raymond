@@ -59,7 +59,7 @@ public class PlayCommand implements iCommand {
                             .queue();
                     return;
                 }
-                handler = new QueuedMusicHandler(manager, vc);
+                handler = new QueuedMusicHandler(manager, vc, msgChannel.asTextChannel());
             }
             handlerMap.put(guild, handler);
             int position = handler.queueURL(url);
@@ -72,6 +72,7 @@ public class PlayCommand implements iCommand {
         } catch (ExtractionException e) {
             e.printStackTrace();
             msgChannel.sendMessage("ERROR! Extraction failed").queue();
+            handlerMap.get(guild).loadNextSong();
             return;
 
         } catch (IOException e) {

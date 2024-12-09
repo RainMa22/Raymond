@@ -1,8 +1,10 @@
 package me.rainma22.Raymond;
 
 import net.dv8tion.jda.api.audio.AudioSendHandler;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
+import org.apache.commons.lang3.StringUtils;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -24,6 +26,11 @@ public class QueuedMusicHandler implements AudioSendHandler {
             return new byte[0];
         }
     };
+    private static final String NEXT_SONG_MSG = "Song Done, loading next song: %s";
+    private static final String QUEUE_CLEARED_MSG = "Queue has been cleared.";
+    private static final String NEXT_SONG_ERR = "Encountered an Exception while loading next song: %s";
+    private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
+
 //    private static Map<String, List<String>> downloadHeader;
 //
 //    static {
@@ -36,12 +43,34 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private LinkedBlockingQueue<URL> songQueue;
     private AudioManager manager;
     private VoiceChannel voiceChannel;
+    private TextChannel originChannel;
 
-    public QueuedMusicHandler(AudioManager manager, VoiceChannel voiceChannel) {
+    private void clearQueue(){
+        songQueue.clear();
+        originChannel.sendMessage(QUEUE_CLEARED_MSG).queue();
+    }
+    private void loadURL(URL url) throws ExtractionException, IOException {
+        if (url == null) return;
+        NewPipe.init(downloader, new Localization("CA", "en"));
+        YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
+                .getStreamExtractor(url.toString());
+        extractor.fetchPage();
+        AudioStream audioStream = extractor.getAudioStreams().stream().reduce((accumulator, stream) -> {
+            if (accumulator.getBitrate() < stream.getBitrate()) return stream;
+            else return accumulator;
+        }).get();
+        String contentURL = audioStream.getContent();
+
+        providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
+        //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
+        manager.openAudioConnection(voiceChannel);
+    }
+
+    public QueuedMusicHandler(AudioManager manager, VoiceChannel voiceChannel, TextChannel originChannel) {
         super();
         downloader = new DownloaderImpl();
         songQueue = new LinkedBlockingQueue<>();
-
+        this.originChannel = originChannel;
         this.manager = manager;
         manager.setSendingHandler(this);
 
@@ -63,7 +92,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
         songQueue.poll();//remove playing url from queue
         URL out = songQueue.peek();
         if (out == null) {
-            providerInstance = DUMMIE_PROVIDER;
+            providerInstance = null;
             return null;
         }
         try {
@@ -73,38 +102,37 @@ public class QueuedMusicHandler implements AudioSendHandler {
         return out;
     }
 
-    private void loadURL(URL url) throws ExtractionException, IOException {
-        if (url == null) return;
-        NewPipe.init(downloader, new Localization("CA", "en"));
-        YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
-                .getStreamExtractor(url.toString());
-        extractor.fetchPage();
-        AudioStream audioStream = extractor.getAudioStreams().stream().reduce((accumulator, stream) -> {
-            if (accumulator.getBitrate() < stream.getBitrate()) return stream;
-            else return accumulator;
-        }).get();
-        String contentURL = audioStream.getContent();
-
-        providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE);
-        //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
-        manager.openAudioConnection(voiceChannel);
+    public void stop(){
+        clearQueue();
+        loadNextSong();
+        manager.closeAudioConnection();
+        originChannel.sendMessage(STOPPED_MSG).queue();
     }
+
+
 
 
     @Override
     public boolean canProvide() {
+        if (providerInstance == null) return false;
+
         try {
             nextData = providerInstance.provide(SAMPLE_SIZE);
         } catch (Exception e) {
             nextData = null;
         }
         boolean canProvide = nextData != null && nextData.length != 0;
+
         if (!canProvide) {
             try {
                 loadNextSong();
-                return !songQueue.isEmpty() && canProvide(); //refresh to see if song can be provided
+                boolean result = !songQueue.isEmpty() && canProvide();
+                originChannel.sendMessage(String.format(NEXT_SONG_MSG, songQueue.peek())).queue();
+                return result; //refresh to see if song can be provided
             } catch (Exception e) {
-                e.printStackTrace();
+                originChannel.sendMessage(
+                        String.format(NEXT_SONG_ERR, StringUtils.join(e.getStackTrace(), "\n"))).queue();
+                clearQueue();
                 return false;
             }
         }
