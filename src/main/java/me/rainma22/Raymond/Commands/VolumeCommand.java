@@ -10,11 +10,12 @@ import java.util.Map;
 
 public class VolumeCommand implements iCommand{
     private final Map<Guild, QueuedMusicHandler> handlerMap;
-    private final String USAGE_MSG = "Usage: !volume [0-200]";
-    private final String VOLUME_SET_MSG = "Volume Set to %.2f%%";
-    private final String BAD_COMMAND_ERR = "Bad Volume Command!";
-    private final String VOLUME_OUT_OF_RANGE_ERR = "Desired Volume not in valid range!";
-    private final String NO_MUSIC_PLAYING_ERR = "No Music is Playing!";
+    private static final int VOLUME_MAX = 100;
+    private static final String USAGE_MSG = String.format("Usage: !volume [0-%d]", VOLUME_MAX);
+    private static final String VOLUME_SET_MSG = "Volume Set to %.2f%%";
+    private static final String BAD_COMMAND_ERR = "Bad Volume Command!";
+    private static final String VOLUME_OUT_OF_RANGE_ERR = "Desired Volume not in valid range!";
+    private static final String NO_MUSIC_PLAYING_ERR = "No Music is Playing!";
 
     public VolumeCommand(Map<Guild,QueuedMusicHandler> handlerMap){
         this.handlerMap = handlerMap;
@@ -33,7 +34,7 @@ public class VolumeCommand implements iCommand{
             return;
         }
         float volume = Float.parseFloat(cmds[1]);
-        if (volume < 0 || volume > 200) {
+        if (volume < 0 || volume > VOLUME_MAX) {
             msgChannel.sendMessage(VOLUME_OUT_OF_RANGE_ERR).queue();
             printUsage(msgChannel.asTextChannel());
             return;
