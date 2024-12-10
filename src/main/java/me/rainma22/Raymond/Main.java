@@ -13,7 +13,7 @@ public class Main {
     {
         BOT_TOKEN = new Scanner(new File("secret")).nextLine();
         //load settings
-        FFmpegInstance.setFfmpegPath("G:\\ffmpeg\\bin\\ffmpeg.exe");
+//        FFmpegInstance.setFfmpegPath("G:\\ffmpeg\\bin\\ffmpeg.exe");
 
         JDA api = JDABuilder.createDefault(BOT_TOKEN)
                 .enableIntents(GatewayIntent.MESSAGE_CONTENT)
