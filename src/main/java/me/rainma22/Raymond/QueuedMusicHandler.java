@@ -44,6 +44,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private AudioManager manager;
     private VoiceChannel voiceChannel;
     private TextChannel originChannel;
+    private float volume = 1.0f;
 
     private void clearQueue(){
         songQueue.clear();
@@ -144,11 +145,22 @@ public class QueuedMusicHandler implements AudioSendHandler {
         //0.02 second
         //48000 samples/channel/seconds * 0.02 seconds/20 ms = 960 samples/20ms
         // * 2 bytes/sample * 2 channel = 3840 bytes/2 channel/20ms
+        for (int i = 0; i < nextData.length; i++) {
+            nextData[i] = (byte) (nextData[i] * volume);
+        }
         return ByteBuffer.wrap(nextData);
     }
 
     @Override
     public boolean isOpus() {
         return false;
+    }
+
+    public float getVolume() {
+        return volume;
+    }
+
+    public void setVolume(float volume) {
+        this.volume = volume;
     }
 }

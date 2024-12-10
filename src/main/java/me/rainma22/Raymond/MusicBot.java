@@ -1,10 +1,7 @@
 package me.rainma22.Raymond;
 
-import me.rainma22.Raymond.Commands.PlayCommand;
-import me.rainma22.Raymond.Commands.SkipCommand;
-import me.rainma22.Raymond.Commands.iCommand;
+import me.rainma22.Raymond.Commands.*;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -21,19 +18,8 @@ public class MusicBot extends ListenerAdapter {
         super();
         supportedCommands.put("!play", new PlayCommand(handlerMap));
         supportedCommands.put("!skip", new SkipCommand(handlerMap));
-        supportedCommands.put("!stop", new iCommand() {
-            @Override
-            public void accept(MessageReceivedEvent event, String[] commands) {
-                QueuedMusicHandler handler = handlerMap.getOrDefault(event.getGuild(),null);
-                MessageChannel channel = event.getChannel();
-                if (handler == null){
-                    channel.sendMessage("No Music is Playing!").queue();
-                    return;
-                }
-                handler.stop();
-                handlerMap.remove(event.getGuild());
-            }
-        });
+        supportedCommands.put("!stop", new StopCommand(handlerMap));
+        supportedCommands.put("!volume", new VolumeCommand(handlerMap));
         supportedCommands.put("default", new iCommand() {});
     }
 
