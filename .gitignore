@@ -45,3 +45,4 @@ bin/
 secret
 /temp.raw
 /settings/serverSettings.json
+/settings/botSettings.json

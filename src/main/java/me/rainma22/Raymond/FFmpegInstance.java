@@ -12,7 +12,7 @@ public class FFmpegInstance extends s16beProviderInstance {
                     "-ar", "48000",
                     "pipe:1");
     static String ffmpegPath = "ffmpeg";
-    public FFmpegInstance(String inPath) throws IOException {
+    public FFmpegInstance(String inPath) {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
         cmds.addAll(List.of("-i",  inPath));
@@ -21,8 +21,15 @@ public class FFmpegInstance extends s16beProviderInstance {
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
         System.out.println(processBuilder.command());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        Process process = processBuilder.start();
-        inputStream = process.getInputStream();
+        try {
+            Process process = processBuilder.start();
+            inputStream = process.getInputStream();
+        } catch (IOException exception){
+            System.err.println("Encountered an Exception!");
+            exception.printStackTrace(System.err);
+            System.err.println("Exiting...");
+            System.exit(-1);
+        }
     }
 
     public static void setFfmpegPath(String path) {
