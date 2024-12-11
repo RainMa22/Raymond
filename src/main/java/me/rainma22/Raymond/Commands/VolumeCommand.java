@@ -1,5 +1,6 @@
 package me.rainma22.Raymond.Commands;
 
+import me.rainma22.Raymond.GuildOptions;
 import me.rainma22.Raymond.QueuedMusicHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -16,9 +17,11 @@ public class VolumeCommand implements iCommand{
     private static final String BAD_COMMAND_ERR = "Bad Volume Command!";
     private static final String VOLUME_OUT_OF_RANGE_ERR = "Desired Volume not in valid range!";
     private static final String NO_MUSIC_PLAYING_ERR = "No Music is Playing!";
+    private GuildOptions guildOptions;
 
     public VolumeCommand(Map<Guild,QueuedMusicHandler> handlerMap){
         this.handlerMap = handlerMap;
+        guildOptions = GuildOptions.getGuildOptions();
     }
 
     private void printUsage(TextChannel channel){
@@ -45,6 +48,8 @@ public class VolumeCommand implements iCommand{
             return;
         }
         handler.setVolume(volume/100);
+        guildOptions.setVolumeOf(event.getGuild(), volume/100);
+
         msgChannel.sendMessage(String.format(VOLUME_SET_MSG, volume)).queue();
     }
 

@@ -1,5 +1,6 @@
 package me.rainma22.Raymond.Commands;
 
+import me.rainma22.Raymond.GuildOptions;
 import me.rainma22.Raymond.QueuedMusicHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.Channel;
@@ -18,9 +19,11 @@ import java.util.Map;
 
 public class PlayCommand implements iCommand {
     private final Map<Guild, QueuedMusicHandler> handlerMap;
+    private final GuildOptions guildOptions;
 
     public PlayCommand(Map<Guild,QueuedMusicHandler> handlerMap){
         this.handlerMap = handlerMap;
+        guildOptions = GuildOptions.getGuildOptions();
     }
 
     @Override
@@ -60,6 +63,7 @@ public class PlayCommand implements iCommand {
                     return;
                 }
                 handler = new QueuedMusicHandler(manager, vc, msgChannel.asTextChannel());
+                handler.setVolume(guildOptions.getVolumeOf(guild));
             }
             handlerMap.put(guild, handler);
             int position = handler.queueURL(url);

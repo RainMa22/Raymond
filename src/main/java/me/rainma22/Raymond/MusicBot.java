@@ -13,7 +13,6 @@ public class MusicBot extends ListenerAdapter {
     private Map<String, iCommand> supportedCommands = new HashMap<>();
     private Map<Guild, QueuedMusicHandler> handlerMap = new HashMap<>();
 
-
     public MusicBot() {
         super();
         supportedCommands.put("!play", new PlayCommand(handlerMap));
@@ -35,6 +34,7 @@ public class MusicBot extends ListenerAdapter {
         String userContent = event.getMessage().getContentRaw();
         if (!userContent.startsWith("!")) return;
         String[] cmds = userContent.split(" ");
+
 
         supportedCommands.getOrDefault(cmds[0].toLowerCase(),
                 supportedCommands.get("default")).accept(event, cmds);
