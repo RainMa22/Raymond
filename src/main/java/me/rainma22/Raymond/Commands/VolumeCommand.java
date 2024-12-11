@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class VolumeCommand implements iCommand{
@@ -49,6 +50,11 @@ public class VolumeCommand implements iCommand{
         }
         handler.setVolume(volume/100);
         guildOptions.setVolumeOf(event.getGuild(), volume/100);
+        try {
+            guildOptions.save();
+        } catch (IOException ignored) {
+            //...
+        }
 
         msgChannel.sendMessage(String.format(VOLUME_SET_MSG, volume)).queue();
     }

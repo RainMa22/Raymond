@@ -53,7 +53,7 @@ public class GuildOptions extends HashMap<String, JSONObject> {
         settings.put("volume", volume);
     }
 
-    public void saveToFile(Path filePath) throws IOException {
+    private void saveToFile(Path filePath) throws IOException {
         filePath.getParent().toFile().mkdirs();
         File out = filePath.toFile();
         if (out.exists() && !out.isFile()) throw new IOException("given path is not a file!");
@@ -62,11 +62,14 @@ public class GuildOptions extends HashMap<String, JSONObject> {
         forEach((key, val) -> {
             if(val.getFloat("volume") != 1f) settings.put(key, val);
         });
+        settings.put("default", BLANK_JSON);
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(out));
         settings.write(writer);
+        writer.flush();
+        writer.close();
     }
 
-    public void loadFromFile(Path filePath) throws FileNotFoundException {
+    private void loadFromFile(Path filePath) throws FileNotFoundException {
         File in = filePath.toFile();
         if(!in.exists()) throw new FileNotFoundException("File does not Exist!");
         JSONTokener tokener = new JSONTokener(new FileInputStream(in));
@@ -74,5 +77,9 @@ public class GuildOptions extends HashMap<String, JSONObject> {
         for (String key: settings.keySet()){
             put(key, settings.getJSONObject(key));
         }
+    }
+
+    public void save() throws IOException {
+        saveToFile(OPTION_PATH);
     }
 }

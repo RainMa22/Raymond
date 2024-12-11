@@ -44,3 +44,4 @@ bin/
 
 secret
 /temp.raw
+/settings/serverSettings.json
