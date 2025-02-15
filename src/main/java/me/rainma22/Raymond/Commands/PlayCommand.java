@@ -9,19 +9,19 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
-import org.apache.commons.lang3.StringUtils;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Map;
 
 public class PlayCommand implements iCommand {
     private final Map<Guild, QueuedMusicHandler> handlerMap;
     private final GuildOptions guildOptions;
 
-    public PlayCommand(Map<Guild,QueuedMusicHandler> handlerMap){
+    public PlayCommand(Map<Guild, QueuedMusicHandler> handlerMap) {
         this.handlerMap = handlerMap;
         guildOptions = GuildOptions.getGuildOptions();
     }
@@ -75,14 +75,19 @@ public class PlayCommand implements iCommand {
             }
         } catch (ExtractionException e) {
             e.printStackTrace();
-            msgChannel.sendMessage("ERROR! Extraction failed\n" + StringUtils.join(e.getStackTrace(), "\n")).queue();
+            msgChannel.sendMessage("ERROR! Extraction failed\n").queue();
+            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
+                msgChannel.sendMessage(elem.toString()).queue();
+            });
             handlerMap.get(guild).loadNextSong();
             return;
 
         } catch (IOException e) {
             e.printStackTrace();
-            msgChannel.sendMessage("ERROR! Unknown Error\n" + StringUtils.join(e.getStackTrace(), "\n"))
-                    .queue();
+            msgChannel.sendMessage("ERROR! Unknown Error\n").queue();
+            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
+                msgChannel.sendMessage(elem.toString()).queue();
+            });
             return;
         }
 
