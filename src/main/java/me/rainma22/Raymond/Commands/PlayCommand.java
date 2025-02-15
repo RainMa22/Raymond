@@ -14,7 +14,6 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Map;
 
 public class PlayCommand implements iCommand {
@@ -76,18 +75,18 @@ public class PlayCommand implements iCommand {
         } catch (ExtractionException e) {
             e.printStackTrace();
             msgChannel.sendMessage("ERROR! Extraction failed\n").queue();
-            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
-                msgChannel.sendMessage(elem.toString()).queue();
-            });
+//            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
+//                msgChannel.sendMessage(elem.toString()).queue();
+//            });
             handlerMap.get(guild).loadNextSong();
             return;
 
         } catch (IOException e) {
             e.printStackTrace();
             msgChannel.sendMessage("ERROR! Unknown Error\n").queue();
-            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
-                msgChannel.sendMessage(elem.toString()).queue();
-            });
+//            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
+//                msgChannel.sendMessage(elem.toString()).queue();
+//            });
             return;
         }
 
