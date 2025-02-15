@@ -75,7 +75,7 @@ public class PlayCommand implements iCommand {
             }
         } catch (ExtractionException e) {
             e.printStackTrace();
-            msgChannel.sendMessage("ERROR! Extraction failed").queue();
+            msgChannel.sendMessage("ERROR! Extraction failed\n" + StringUtils.join(e.getStackTrace(), "\n")).queue();
             handlerMap.get(guild).loadNextSong();
             return;
 
