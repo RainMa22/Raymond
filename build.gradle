@@ -8,7 +8,7 @@ application.mainClass = group + "." + "Main"
 
 version = "1.0-SNAPSHOT"
 String jdaVersion = "5.1.2"
-String newPipeVer = "v0.24.4"
+String newPipeVer = "v0.24.5"
 
 repositories {
     mavenCentral()
