@@ -13,6 +13,7 @@ public class GlobalOptions extends JSONObject{
     static{
         BLANK_JSON.put("api_key", "");
         BLANK_JSON.put("ffmpeg_path", "ffmpeg");
+        BLANK_JSON.put("cache_size","10");
     }
 
     public static GlobalOptions getGlobalOptions() {
@@ -28,6 +29,10 @@ public class GlobalOptions extends JSONObject{
 
     public String getAPIKey(){
         return getString("api_key");
+    }
+
+    public Integer getCacheSize(){
+        return getInt("cache_size");
     }
 
     private GlobalOptions(Path filePath){
