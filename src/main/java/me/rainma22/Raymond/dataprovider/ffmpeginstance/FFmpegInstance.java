@@ -50,6 +50,7 @@ public class FFmpegInstance extends s16beProviderInstance {
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
 //        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         try {
+            ffmpegProcess.destroy();
             ffmpegProcess = processBuilder.start();
             inputStream = ffmpegProcess.getInputStream();
         } catch (IOException exception){

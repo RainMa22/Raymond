@@ -3,7 +3,6 @@ package me.rainma22.Raymond.dataprovider.ffmpeginstance;
 import me.rainma22.Raymond.GlobalOptions;
 
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,7 +17,7 @@ public class CachedFFmpegInstance extends FFmpegInstance {
         this.frameSize = frameSize;
         int cacheSize = GlobalOptions.getGlobalOptions().getCacheSize();
         if (cacheSize <= 0) cacheQueue = new LinkedBlockingQueue<>();
-        else cacheQueue = new ArrayBlockingQueue<>(cacheSize);
+        else cacheQueue = new LinkedBlockingQueue<>(cacheSize);
 //        seek(256f);
 //        loader.setCurrFrame(256*FRAMES_PER_SECOND);
         loader.start();
