@@ -19,8 +19,8 @@ public class CachedFFmpegInstance extends FFmpegInstance {
         int cacheSize = GlobalOptions.getGlobalOptions().getCacheSize();
         if (cacheSize <= 0) cacheQueue = new LinkedBlockingQueue<>();
         else cacheQueue = new ArrayBlockingQueue<>(cacheSize);
-        seek(256f);
-        loader.setCurrFrame(256*FRAMES_PER_SECOND);
+//        seek(256f);
+//        loader.setCurrFrame(256*FRAMES_PER_SECOND);
         loader.start();
     }
 
