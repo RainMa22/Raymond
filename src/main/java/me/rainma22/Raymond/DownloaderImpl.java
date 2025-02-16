@@ -5,18 +5,27 @@ import org.schabi.newpipe.extractor.downloader.Request;
 import org.schabi.newpipe.extractor.downloader.Response;
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class DownloaderImpl extends Downloader {
+    private static Map<String, List<String>> downloadHeader;
+
+    static {
+        downloadHeader = new HashMap<>();
+        downloadHeader = Map.of("range", List.of("0-"));
+    }
+
     private static final String USER_AGENT
-            = "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0";
+            = "Mozilla/5.0 (X11; U; Linux; rv:132.0esr) Gecko/20161309 Firefox/132.0esr";
 
     public DownloaderImpl() {
     }
@@ -35,18 +44,19 @@ public class DownloaderImpl extends Downloader {
 
     public Response execute(URL url, String method, byte[] dataToSend, Map<String, List<String>> header) throws IOException, ReCaptchaException, UnsupportedEncodingException {
 
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
         connection.addRequestProperty("User-Agent", USER_AGENT);
-        connection.setDoInput(true);
+//        connection.setDoInput(true);
         connection.setRequestMethod(method);
-        if (header != null) {
-            header.forEach((key, values) -> {
-                values.forEach((value) -> {
-                    connection.addRequestProperty(key, value);
-                });
+        HashMap<String, List<String>> newHeader= new HashMap<>();
+        if (header != null) newHeader.putAll(header);
+        newHeader.putAll(downloadHeader);
+        newHeader.forEach((key, values) -> {
+            values.forEach((value) -> {
+                connection.addRequestProperty(key, value);
             });
-        }
+        });
         if (dataToSend != null) {
             connection.setDoOutput(true);
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
@@ -69,11 +79,11 @@ public class DownloaderImpl extends Downloader {
         byte[] in = responseStream.readAllBytes();
 
 
-        String html = new String(in);
+        String dataString = new String(in);
 
 
         Response response = new Response(status, connection.getResponseMessage(),
-                connection.getHeaderFields(), html, url.toString());
+                connection.getHeaderFields(), dataString, url.toString());
 
         return response;
     }

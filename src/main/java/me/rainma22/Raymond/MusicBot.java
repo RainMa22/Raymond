@@ -1,6 +1,6 @@
 package me.rainma22.Raymond;
 
-import me.rainma22.Raymond.Commands.*;
+import me.rainma22.Raymond.commands.*;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;

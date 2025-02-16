@@ -1,4 +1,4 @@
-package me.rainma22.Raymond.Commands;
+package me.rainma22.Raymond.commands;
 
 import me.rainma22.Raymond.GuildOptions;
 import me.rainma22.Raymond.QueuedMusicHandler;

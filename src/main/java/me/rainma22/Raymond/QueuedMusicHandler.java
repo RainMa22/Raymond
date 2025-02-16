@@ -1,10 +1,13 @@
 package me.rainma22.Raymond;
 
+import me.rainma22.Raymond.dataprovider.ffmpeginstance.CachedFFmpegInstance;
+import me.rainma22.Raymond.dataprovider.s16beProviderInstance;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -15,6 +18,8 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueuedMusicHandler implements AudioSendHandler {
@@ -31,27 +36,33 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NEXT_SONG_ERR = "Encountered an Exception while loading next song: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
 
-//    private static Map<String, List<String>> downloadHeader;
-//
-//    static {
-//        downloadHeader = Map.of("Range", List.of("bytes=0-"));
-//    }
+
 
     private final Downloader downloader;
     private s16beProviderInstance providerInstance;
     private byte[] nextData;
-    private LinkedBlockingQueue<URL> songQueue;
-    private AudioManager manager;
-    private VoiceChannel voiceChannel;
-    private TextChannel originChannel;
+    private final LinkedBlockingQueue<URL> songQueue;
+    private final AudioManager manager;
+    private final VoiceChannel voiceChannel;
+    private final TextChannel originChannel;
     private float volume = 1.0f;
 
     private void clearQueue(){
         songQueue.clear();
         originChannel.sendMessage(QUEUE_CLEARED_MSG).queue();
     }
+    private void clearProvider(){
+        if(providerInstance != null){
+            providerInstance.cleanup();
+        }
+        providerInstance = null;
+    }
+
     private void loadURL(URL url) throws ExtractionException, IOException {
-        if (url == null) return;
+        clearProvider();
+        if (url == null){
+            return;
+        };
         NewPipe.init(downloader, new Localization("CA", "en"));
         YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
                 .getStreamExtractor(url.toString());
@@ -89,16 +100,17 @@ public class QueuedMusicHandler implements AudioSendHandler {
         return position;
     }
 
+    /**
+     * removes the current song from queue and start playing the next song
+     * @return the current URL playing if the URL is valid, else return null
+     */
+    @Nullable
     public URL loadNextSong() {
-        songQueue.poll();//remove playing url from queue
+        songQueue.poll(); //remove playing url from queue
         URL out = songQueue.peek();
-        if (out == null) {
-            providerInstance = null;
-            return null;
-        }
         try {
             loadURL(out);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return out;
     }
@@ -122,7 +134,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
         } catch (Exception e) {
             nextData = null;
         }
-        boolean canProvide = nextData != null && nextData.length != 0;
+        boolean canProvide = nextData != null;
 
         if (!canProvide) {
             try {

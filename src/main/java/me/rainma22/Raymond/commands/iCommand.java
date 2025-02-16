@@ -1,4 +1,4 @@
-package me.rainma22.Raymond.Commands;
+package me.rainma22.Raymond.commands;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 

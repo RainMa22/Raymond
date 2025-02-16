@@ -1,10 +1,13 @@
-package me.rainma22.Raymond;
+package me.rainma22.Raymond.dataprovider.ffmpeginstance;
+
+import me.rainma22.Raymond.dataprovider.s16beProviderInstance;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FFmpegInstance extends s16beProviderInstance {
+    private Process ffmpegProcess = null;
     private static final List<String> OUTPARAM_FOR_FFMPEG =
             List.of("-f", "s16be",
                     "-codec:a", "pcm_s16be",
@@ -22,14 +25,19 @@ public class FFmpegInstance extends s16beProviderInstance {
         System.out.println(processBuilder.command());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         try {
-            Process process = processBuilder.start();
-            inputStream = process.getInputStream();
+            ffmpegProcess = processBuilder.start();
+            inputStream = ffmpegProcess.getInputStream();
         } catch (IOException exception){
             System.err.println("Encountered an Exception!");
             exception.printStackTrace(System.err);
             System.err.println("Exiting...");
             System.exit(-1);
         }
+    }
+
+    @Override
+    public void cleanup(){
+        ffmpegProcess.destroy();
     }
 
     public static void setFfmpegPath(String path) {
