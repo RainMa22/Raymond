@@ -49,8 +49,9 @@ public class GuildOptions extends HashMap<String, JSONObject> {
     }
 
     public void setVolumeOf(Guild guild, float volume){
-        JSONObject settings = get(guild);
-        settings.put("volume", volume);
+        JSONObject guildSettings = get(guild);
+        guildSettings.put("volume", volume);
+        put(guild.getId(), guildSettings);
     }
 
     private void saveToFile(Path filePath) throws IOException {

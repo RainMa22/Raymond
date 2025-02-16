@@ -19,6 +19,8 @@ public class CachedFFmpegInstance extends FFmpegInstance {
         int cacheSize = GlobalOptions.getGlobalOptions().getCacheSize();
         if (cacheSize <= 0) cacheQueue = new LinkedBlockingQueue<>();
         else cacheQueue = new ArrayBlockingQueue<>(cacheSize);
+        seek(256f);
+        loader.setCurrFrame(256*FRAMES_PER_SECOND);
         loader.start();
     }
 
@@ -34,8 +36,15 @@ public class CachedFFmpegInstance extends FFmpegInstance {
     }
 
     private class LoaderThread extends Thread {
-        final int WAIT_TIME_NS = (int) (1e9 / 24000);
+        private static final int NUM_RETRIES = 3;
+        private static final int WAIT_TIME_NS = (int) (1e9 / 24000);
         public AtomicBoolean isDone = new AtomicBoolean(false);
+        private int retries = 0;
+        private int currFrame = 0;
+        public void setCurrFrame(int currFrame) {
+            this.currFrame = currFrame;
+        }
+
 
         public boolean isDone() {
             return isDone.get();
@@ -45,8 +54,13 @@ public class CachedFFmpegInstance extends FFmpegInstance {
         public void run() {
             super.run();
             byte[] out;
-            try {
-                while ((out = CachedFFmpegInstance.super.provide(frameSize)).length != 0) {
+            while (true) {
+                try {
+                    out = CachedFFmpegInstance.super.provide(frameSize);
+                    if(out.length == 0){
+                        if(CachedFFmpegInstance.super.isInterrupted()) throw new IOException("process is interrupted");
+                        else break;
+                    }
                     while (!cacheQueue.offer(out)) {
                         try {
                             synchronized (this) {
@@ -56,9 +70,14 @@ public class CachedFFmpegInstance extends FFmpegInstance {
                             //ignored
                         }
                     }
+                    currFrame++;
+                } catch (IOException e) {
+                    if(retries > NUM_RETRIES){
+                        break;
+                    }
+                    retries++;
+                    CachedFFmpegInstance.super.seek((float) (currFrame) / FRAMES_PER_SECOND);
                 }
-            } catch (IOException e) {
-                //ignored
             }
             isDone.set(true);
         }
