@@ -58,7 +58,7 @@ public class CachedFFmpegInstance extends FFmpegInstance {
                     }
                 }
             }catch (IOException e){
-                cacheQueue.add(new byte[0]);
+//                cacheQueue.add(new byte[0]);
             }
         }
     }
