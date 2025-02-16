@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FFmpegInstance extends s16beProviderInstance {
+public abstract class FFmpegInstance extends s16beProviderInstance {
     private Process ffmpegProcess = null;
     private static final List<String> OUTPARAM_FOR_FFMPEG =
             List.of("-f", "s16be",

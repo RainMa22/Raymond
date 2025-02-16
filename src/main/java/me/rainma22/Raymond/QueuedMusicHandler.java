@@ -18,8 +18,6 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueuedMusicHandler implements AudioSendHandler {
