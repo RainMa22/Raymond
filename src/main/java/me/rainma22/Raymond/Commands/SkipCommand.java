@@ -15,7 +15,7 @@ public class SkipCommand implements iCommand{
         this.handlerMap = handlerMap;
     }
     @Override
-    public void accept(MessageReceivedEvent event, String[] commands) {
+    public void accept(MessageReceivedEvent event, String[] cmds) {
         Guild guild = event.getGuild();
         MessageChannel channel = event.getChannel();
 

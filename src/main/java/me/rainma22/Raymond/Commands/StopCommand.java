@@ -15,7 +15,7 @@ public class StopCommand implements iCommand{
     }
 
     @Override
-    public void accept(MessageReceivedEvent event, String[] commands) {
+    public void accept(MessageReceivedEvent event, String[] cmds) {
         QueuedMusicHandler handler = handlerMap.getOrDefault(event.getGuild(),null);
         MessageChannel channel = event.getChannel();
         if (handler == null){
