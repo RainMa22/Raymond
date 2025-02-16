@@ -13,7 +13,7 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
                     "-codec:a", "pcm_s16be",
                     "-ac", "2",
                     "-ar", "48000",
-                    "-xerror",
+//                    "-xerror",
                     "pipe:1");
     private static String SKIP_SEC = "-ss";
     private String inPath;
@@ -40,6 +40,7 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         }
     }
 
+    @Override
     public void seek(float second){
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
@@ -50,7 +51,7 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
 //        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         try {
-            ffmpegProcess.destroy();
+            cleanup();
             ffmpegProcess = processBuilder.start();
             inputStream = ffmpegProcess.getInputStream();
         } catch (IOException exception){
@@ -73,6 +74,12 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
 
     @Override
     public void cleanup(){
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            //ignored
+        }
+        inputStream = null;
         ffmpegProcess.destroy();
     }
 

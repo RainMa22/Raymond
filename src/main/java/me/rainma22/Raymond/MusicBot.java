@@ -19,6 +19,7 @@ public class MusicBot extends ListenerAdapter {
         supportedCommands.put("!skip", new SkipCommand(handlerMap));
         supportedCommands.put("!stop", new StopCommand(handlerMap));
         supportedCommands.put("!volume", new VolumeCommand(handlerMap));
+        supportedCommands.put("!seek", new SeekCommand(handlerMap));
         supportedCommands.put("default", new iCommand() {});
     }
 

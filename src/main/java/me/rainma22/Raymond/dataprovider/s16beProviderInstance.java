@@ -13,5 +13,6 @@ public abstract class s16beProviderInstance {
         else return Arrays.copyOf(out, length);
     }
 
+    public abstract void seek(float second);
     public void cleanup(){}
 }
