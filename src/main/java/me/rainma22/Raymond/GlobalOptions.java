@@ -13,7 +13,8 @@ public class GlobalOptions extends JSONObject{
     static{
         BLANK_JSON.put("api_key", "");
         BLANK_JSON.put("ffmpeg_path", "ffmpeg");
-        BLANK_JSON.put("cache_size","10");
+        BLANK_JSON.put("cache_size","2500");
+        BLANK_JSON.put("num_retries", "50");
     }
 
     public static GlobalOptions getGlobalOptions() {
@@ -33,6 +34,10 @@ public class GlobalOptions extends JSONObject{
 
     public Integer getCacheSize(){
         return getInt("cache_size");
+    }
+
+    public Integer getNumRetries(){
+        return getInt("num_retries");
     }
 
     private GlobalOptions(Path filePath){
@@ -56,7 +61,7 @@ public class GlobalOptions extends JSONObject{
         File out = filePath.toFile();
         if (out.exists() && !out.isFile()) throw new IOException("given path is not a file!");
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(out));
-        write(writer);
+        write(writer, 4, 0);
         writer.flush();
         writer.close();
     }

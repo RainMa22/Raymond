@@ -11,12 +11,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CachedFFmpegInstance extends FFmpegInstance {
     private final int frameSize;
     private final BlockingQueue<byte[]> cacheQueue;
+    private final int NUM_RETRIES;
     private final LoaderThread loader = new LoaderThread();
 
     public CachedFFmpegInstance(String inPath, int frameSize, int second) {
         super(inPath);
         this.frameSize = frameSize;
         int cacheSize = GlobalOptions.getGlobalOptions().getCacheSize();
+        NUM_RETRIES = GlobalOptions.getGlobalOptions().getNumRetries();
         if (cacheSize <= 0) cacheQueue = new LinkedBlockingQueue<>();
         else cacheQueue = new LinkedBlockingQueue<>(cacheSize);
         seek(second);
@@ -47,7 +49,6 @@ public class CachedFFmpegInstance extends FFmpegInstance {
     }
 
     private class LoaderThread extends Thread {
-        private static final int NUM_RETRIES = 3;
         private static final int WAIT_TIME_MS = 20;
         public AtomicBoolean isDone = new AtomicBoolean(false);
         public AtomicInteger currFrame;
