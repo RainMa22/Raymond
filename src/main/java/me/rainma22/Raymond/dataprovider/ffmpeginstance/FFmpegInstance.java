@@ -7,22 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class FFmpegInstance extends s16beProviderInstance {
-    private Process ffmpegProcess = null;
     private static final List<String> OUTPARAM_FOR_FFMPEG =
             List.of("-f", "s16be",
                     "-codec:a", "pcm_s16be",
                     "-ac", "2",
                     "-ar", "48000",
-//                    "-xerror",
+                    "-xerror",
                     "pipe:1");
-    private static String SKIP_SEC = "-ss";
-    private String inPath;
     protected static String ffmpegPath = "ffmpeg";
+    private static String SKIP_SEC = "-ss";
+    private Process ffmpegProcess = null;
+    private String inPath;
+
     public FFmpegInstance(String inPath) {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
         this.inPath = inPath;
-        cmds.addAll(List.of("-i",  inPath));
+        cmds.addAll(List.of("-i", inPath));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
@@ -32,7 +33,7 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         try {
             ffmpegProcess = processBuilder.start();
             inputStream = ffmpegProcess.getInputStream();
-        } catch (IOException exception){
+        } catch (IOException exception) {
             System.err.println("Encountered an Exception!");
             exception.printStackTrace(System.err);
             System.err.println("Exiting...");
@@ -40,11 +41,15 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         }
     }
 
+    public static void setFfmpegPath(String path) {
+        ffmpegPath = path;
+    }
+
     @Override
-    public void seek(float second){
+    public void seek(float second) {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
-        cmds.addAll(List.of("-i",  inPath));
+        cmds.addAll(List.of("-i", inPath));
         cmds.addAll(List.of(SKIP_SEC, Float.toString(second)));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
@@ -54,7 +59,7 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
             cleanup();
             ffmpegProcess = processBuilder.start();
             inputStream = ffmpegProcess.getInputStream();
-        } catch (IOException exception){
+        } catch (IOException exception) {
             System.err.println("Encountered an Exception!");
             exception.printStackTrace(System.err);
             System.err.println("Exiting...");
@@ -62,18 +67,12 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         }
     }
 
-    public boolean isInterrupted(){
-        try{
-            return !ffmpegProcess.isAlive() && ffmpegProcess.exitValue() != 0;
-        } catch (IllegalThreadStateException exception){
-            return false;
-        }
+    public boolean isInterrupted() {
+        return !ffmpegProcess.isAlive() && ffmpegProcess.exitValue() != 0;
     }
 
-
-
     @Override
-    public void cleanup(){
+    public void cleanup() {
         try {
             inputStream.close();
         } catch (IOException e) {
@@ -81,9 +80,5 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         }
         inputStream = null;
         ffmpegProcess.destroy();
-    }
-
-    public static void setFfmpegPath(String path) {
-        ffmpegPath = path;
     }
 }
