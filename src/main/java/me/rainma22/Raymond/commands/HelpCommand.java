@@ -16,8 +16,9 @@ public class HelpCommand implements iCommand{
     public void accept(MessageReceivedEvent event, String[] cmds) {
         StringJoiner joiner = new StringJoiner("\n");
         joiner.add("List of available commands:");
+        joiner.add("");
         for (Map.Entry<String, iCommand> entry : supportedCommands.entrySet()){
-            joiner.add(" - "+entry.getKey() + " :");
+            joiner.add(" - "+entry.getKey() + ": ");
             joiner.add("\t > " + entry.getValue().getDescription("\n\t > "));
         }
         event.getChannel().asTextChannel().sendMessage(joiner.toString()).queue();

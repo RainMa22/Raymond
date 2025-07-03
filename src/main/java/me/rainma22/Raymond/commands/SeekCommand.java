@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class SeekCommand implements iCommand {
     private Map<Guild, QueuedMusicHandler> handlerMap;
-
+    private static final String USAGE_STRING = "Usage: `!seek [second]`";
     public SeekCommand(Map<Guild, QueuedMusicHandler> handlerMap) {
         this.handlerMap = handlerMap;
     }
@@ -17,8 +17,8 @@ public class SeekCommand implements iCommand {
     public void accept(MessageReceivedEvent event, String[] cmds) {
         if (cmds.length < 2) {
             event.getMessage().reply(String.join("\n",
-                    "Please Enter a second to seek to!",
-                    getDescription())).queue();
+                    "Please Enter a timestamp to seek to!",
+                    USAGE_STRING)).queue();
         }
         QueuedMusicHandler handler = handlerMap.get(event.getGuild());
         if (handler == null){
@@ -40,6 +40,6 @@ public class SeekCommand implements iCommand {
     @Override
     public String getDescription(String separator) {
         return String.join(separator, "Seek to a certain second count.",
-                "Usage: `!seek [second]`");
+                USAGE_STRING);
     }
 }
