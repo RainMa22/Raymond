@@ -35,6 +35,14 @@ tasks.withType(JavaCompile).configureEach {
     sourceCompatibility = "11"
 }
 
+tasks.withType(Zip).configureEach{
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE;
+}
+tasks.withType(Tar).configureEach{
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE;
+}
+
+
 tasks.test {
     useJUnitPlatform()
 }
