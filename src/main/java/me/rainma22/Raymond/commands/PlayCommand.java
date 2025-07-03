@@ -13,8 +13,12 @@ import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PlayCommand implements iCommand {
     private final Map<Guild, QueuedMusicHandler> handlerMap;
@@ -35,8 +39,8 @@ public class PlayCommand implements iCommand {
         }
         URL url;
         try {
-            url = new URL(cmds[1]);
-        } catch (MalformedURLException e) {
+            url = new URI(cmds[1]).toURL();
+        } catch (MalformedURLException | URISyntaxException e) {
             msgChannel.asTextChannel().sendMessage("bad Url: " +
                     cmds[1]).queue();
             return;
@@ -73,21 +77,13 @@ public class PlayCommand implements iCommand {
                         position).queue();
             }
         } catch (ExtractionException e) {
-            e.printStackTrace();
+            Logger.getAnonymousLogger().log(Level.SEVERE, "ExtractionException was thrown", e);
             msgChannel.sendMessage("ERROR! Extraction failed\n").queue();
-//            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
-//                msgChannel.sendMessage(elem.toString()).queue();
-//            });
             handlerMap.get(guild).loadNextSong();
-            return;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.getAnonymousLogger().log(Level.SEVERE, "IOException was thrown", e);
             msgChannel.sendMessage("ERROR! Unknown Error\n").queue();
-//            Arrays.stream(e.getStackTrace()).sequential().forEach((elem) -> {
-//                msgChannel.sendMessage(elem.toString()).queue();
-//            });
-            return;
         }
 
     }

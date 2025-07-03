@@ -10,8 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,15 @@ public class DownloaderImpl extends Downloader {
     @Override
     public Response execute(Request request) throws IOException, ReCaptchaException, UnsupportedEncodingException {
         // Create an instance of HttpClient.
-        return execute(new URL(request.url()), request.httpMethod(), request.dataToSend(), request.headers());
+        URL target;
+        try {
+            target = new URI(request.url()).toURL();
+        } catch (URISyntaxException e) {
+            MalformedURLException mue = new MalformedURLException();
+            mue.addSuppressed(e);
+            throw mue;
+        }
+        return execute(target, request.httpMethod(), request.dataToSend(), request.headers());
     }
 
     public Response execute(URL url, String method, byte[] dataToSend, Map<String, List<String>> header) throws IOException, ReCaptchaException, UnsupportedEncodingException {
@@ -69,7 +76,14 @@ public class DownloaderImpl extends Downloader {
         if (status == HttpURLConnection.HTTP_MOVED_TEMP
                 || status == HttpURLConnection.HTTP_MOVED_PERM) {
             String location = connection.getHeaderField("Location");
-            URL newUrl = new URL(location);
+            URL newUrl;
+            try {
+                newUrl = new URI(location).toURL();
+            } catch (URISyntaxException e) {
+                MalformedURLException mue = new MalformedURLException();
+                mue.addSuppressed(e);
+                throw mue;
+            }
             return execute(newUrl, method, dataToSend, header);
         }
 
