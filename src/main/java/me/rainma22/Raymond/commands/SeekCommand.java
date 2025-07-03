@@ -4,11 +4,15 @@ import me.rainma22.Raymond.QueuedMusicHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.Set;
 
 public class SeekCommand implements iCommand {
     private Map<Guild, QueuedMusicHandler> handlerMap;
-    private static final String USAGE_STRING = "Usage: `!seek [second]`";
+    private static final String USAGE_STRING = "Usage:`!seek [[hour]H][[minute]M][[second][S]]`";
+    private static final Set<String> VALID_SUFFIXES = Set.of("H","M","S");
     public SeekCommand(Map<Guild, QueuedMusicHandler> handlerMap) {
         this.handlerMap = handlerMap;
     }
@@ -26,14 +30,20 @@ public class SeekCommand implements iCommand {
             return;
         }
         float seekTo;
+        String timestampString = cmds[1].toUpperCase();
         try {
-            seekTo = Float.parseFloat(cmds[1]);
+            if(!VALID_SUFFIXES.contains(timestampString.substring(timestampString.length()-1)))
+                timestampString += "S";
+            seekTo = (float) Duration.parse("PT" + timestampString).getSeconds();
             if(seekTo < 0) throw new NumberFormatException();
         } catch (NumberFormatException formatException) {
-            event.getMessage().reply("Invalid Second: " + cmds[1] + "!").queue();
+            event.getMessage().reply("Invalid Timestamp: " + cmds[1] + "!").queue();
+            return;
+        } catch (DateTimeParseException dtpe){
+            event.getMessage().reply("Unable to parse duration String: " + timestampString).queue();
             return;
         }
-        event.getMessage().reply(String.format("Seeking to %.02f Seconds.", seekTo)).queue();
+        event.getMessage().reply(String.format("Seeking to %s(%.02f Seconds).", cmds[1],seekTo)).queue();
         handlerMap.get(event.getGuild()).seekCurrentMusic(seekTo);
     }
 
