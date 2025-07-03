@@ -4,13 +4,14 @@ import me.rainma22.Raymond.commands.*;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.apache.commons.collections4.map.LinkedMap;
 
 import java.util.HashMap;
 import java.util.Map;
 
 
 public class MusicBot extends ListenerAdapter {
-    private Map<String, iCommand> supportedCommands = new HashMap<>();
+    private Map<String, iCommand> supportedCommands = new LinkedMap<>();
     private Map<Guild, QueuedMusicHandler> handlerMap = new HashMap<>();
 
     public MusicBot() {
@@ -20,7 +21,8 @@ public class MusicBot extends ListenerAdapter {
         supportedCommands.put("!stop", new StopCommand(handlerMap));
         supportedCommands.put("!volume", new VolumeCommand(handlerMap));
         supportedCommands.put("!seek", new SeekCommand(handlerMap));
-        supportedCommands.put("default", new iCommand() {});
+        supportedCommands.put("!everything", new EverythingCommand());
+        supportedCommands.put("!help", new HelpCommand(supportedCommands));
     }
 
     @Override
@@ -38,6 +40,6 @@ public class MusicBot extends ListenerAdapter {
 
 
         supportedCommands.getOrDefault(cmds[0].toLowerCase(),
-                supportedCommands.get("default")).accept(event, cmds);
+                new iCommand() {}).accept(event, cmds);
     }
 }

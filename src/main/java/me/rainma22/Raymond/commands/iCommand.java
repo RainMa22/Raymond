@@ -7,10 +7,12 @@ import java.util.function.BiConsumer;
 public interface iCommand extends BiConsumer<MessageReceivedEvent, String[]> {
     @Override
     default void accept(MessageReceivedEvent event, String[] cmds) {
-        if (cmds[0].toLowerCase().contains("everything")) {
-            event.getMessage().reply("https://tenor.com/view/404-not-found-error-20th-century-fox-gif-24907780").queue();
-        } else {
             event.getChannel().sendMessage("No Such Command: " + cmds[0]).queue();
-        }
+    }
+    default String getDescription(){
+        return getDescription(System.lineSeparator());
+    }
+    default String getDescription(String separator){
+        return "This command does not have a description yet.";
     }
 }

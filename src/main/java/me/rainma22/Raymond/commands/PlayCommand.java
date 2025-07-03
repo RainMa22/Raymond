@@ -33,8 +33,8 @@ public class PlayCommand implements iCommand {
     public void accept(MessageReceivedEvent event, String[] cmds) {
         MessageChannelUnion msgChannel = event.getChannel();
         if (cmds.length < 2) {
-            msgChannel.sendMessage("No URL found!\n" +
-                    "Usage: !play [Youtube URL]").queue();
+            msgChannel.sendMessage(String.join("\n", "No URL found!",
+                    getDescription())).queue();
             return;
         }
         URL url;
@@ -86,5 +86,12 @@ public class PlayCommand implements iCommand {
             msgChannel.sendMessage("ERROR! Unknown Error\n").queue();
         }
 
+    }
+
+    @Override
+    public String getDescription(String separator) {
+        return String.join(separator,"Plays a YouTube video URL.",
+                "- Note: currently does not support playlists.",
+                "Usage: `!play [Youtube URL]`");
     }
 }

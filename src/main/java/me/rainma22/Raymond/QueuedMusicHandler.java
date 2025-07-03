@@ -164,7 +164,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
         //48000 samples/channel/seconds * 0.02 seconds/20 ms = 960 samples/20ms
         // * 2 bytes/sample * 2 channel = 3840 bytes/2 channel/20ms
         for (int i = 0; i < nextData.length; i++) {
-            nextData[i] = (byte) (nextData[i] * volume);
+            nextData[i] = (byte) ((nextData[i]&0xFF) * volume);
         }
         return ByteBuffer.wrap(nextData);
     }

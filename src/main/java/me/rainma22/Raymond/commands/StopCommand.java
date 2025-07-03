@@ -25,4 +25,9 @@ public class StopCommand implements iCommand{
         handler.stop();
         handlerMap.remove(event.getGuild());
     }
+
+    @Override
+    public String getDescription(String separator) {
+        return "Stops this bot from playing and make it disconnect.";
+    }
 }

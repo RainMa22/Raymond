@@ -31,4 +31,9 @@ public class SkipCommand implements iCommand{
             channel.sendMessage("Song Skipped! Now Playing: " + nextSong).queue();
         }
     }
+
+    @Override
+    public String getDescription(String separator) {
+        return "Skips the current song.";
+    }
 }

@@ -16,8 +16,9 @@ public class SeekCommand implements iCommand {
     @Override
     public void accept(MessageReceivedEvent event, String[] cmds) {
         if (cmds.length < 2) {
-            event.getMessage().reply("Please Enter a second to seek to!\n" +
-                    "Usage: !seek [second]").queue();
+            event.getMessage().reply(String.join("\n",
+                    "Please Enter a second to seek to!",
+                    getDescription())).queue();
         }
         QueuedMusicHandler handler = handlerMap.get(event.getGuild());
         if (handler == null){
@@ -34,5 +35,11 @@ public class SeekCommand implements iCommand {
         }
         event.getMessage().reply(String.format("Seeking to %.02f Seconds.", seekTo)).queue();
         handlerMap.get(event.getGuild()).seekCurrentMusic(seekTo);
+    }
+
+    @Override
+    public String getDescription(String separator) {
+        return String.join(separator, "Seek to a certain second count.",
+                "Usage: `!seek [second]`");
     }
 }
