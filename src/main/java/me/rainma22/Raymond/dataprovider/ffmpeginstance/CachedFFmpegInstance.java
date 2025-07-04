@@ -44,7 +44,7 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
                 loader.notify();
             }
         }
-        if ((out = cacheQueue.poll()) == null) return null;
+        if ((out = cacheQueue.poll()) == null || out.length == 0) return new byte[0];
         currFrame++;
         return out;
     }

@@ -141,9 +141,9 @@ public class QueuedMusicHandler implements AudioSendHandler {
         try {
             nextData = providerInstance.provide(SAMPLE_SIZE);
         } catch (Exception e) {
-            nextData = null;
+            nextData = new byte[0];
         }
-        boolean canProvide = nextData != null;
+        boolean canProvide = nextData != null && nextData.length != 0;
 
         if (!canProvide) {
             try {
