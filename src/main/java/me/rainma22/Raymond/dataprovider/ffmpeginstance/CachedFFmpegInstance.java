@@ -2,7 +2,6 @@ package me.rainma22.Raymond.dataprovider.ffmpeginstance;
 
 import me.rainma22.Raymond.GlobalOptions;
 import me.rainma22.Raymond.dataprovider.s16beProviderInstance;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -12,12 +11,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class CachedFFmpegInstance extends s16beProviderInstance {
     private final int frameSize;
-    private final BlockingQueue<Pair<Integer, byte[]>> cacheQueue;
+    private final BlockingQueue<byte[]> cacheQueue;
     private final int NUM_RETRIES;
     private final LoaderThread loader = new LoaderThread();
     private final String inPath;
     private final FFmpegInstance instance;
     private float volume = 1f;
+    private int currFrame = 0;
     public CachedFFmpegInstance(String inPath, int frameSize, int second) {
         this.inPath = inPath;
         instance = new FFmpegInstance(inPath);
@@ -33,24 +33,28 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
     @Override
     public byte[] provide(int length) throws IOException {
         if (frameSize != length) throw new IOException(String.format("%d != %d !!!", frameSize, length));
-        Pair<Integer, byte[]> segment = cacheQueue.poll();
         byte[] out;
-        while (!loader.isDone.get() && segment == null) {
+        while (!loader.isDone.get() && cacheQueue.isEmpty()) {
             synchronized (loader) {
                 loader.notify();
             }
-            segment = cacheQueue.poll();
         }
-        if (segment == null) return null;
-        out = segment.getRight();
+        if (loader.isDone.get() || cacheQueue.size() < cacheQueue.remainingCapacity()){
+            synchronized (loader) {
+                loader.notify();
+            }
+        }
+        if ((out = cacheQueue.poll()) == null) return null;
+        currFrame++;
         return out;
     }
 
     @Override
     public void seek(float second) {
+        currFrame = Math.round(second*FRAMES_PER_SECOND);
         synchronized (loader) {
             cacheQueue.clear();
-            loader.setCurrFrame((int) (second * FRAMES_PER_SECOND));
+            loader.setCurrFrame(currFrame);
             if(loader.isDone.get()){
                 loader.isDone.set(false);
             }
@@ -60,10 +64,7 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
     @Override
     public void setVolume(float volume) {
         this.volume = volume;
-        var segment = cacheQueue.peek();
-        if (segment == null) return;
-        Integer frameNum = segment.getLeft();
-        seek(frameNum.floatValue()/FRAMES_PER_SECOND);
+        seek((float) currFrame/FRAMES_PER_SECOND);
     }
 
     @Override
@@ -116,7 +117,7 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
                                 throw new IOException("process is interrupted");
                             else isDone.set(true);
                         }
-                        while (!cacheQueue.offer(Pair.of(currFrame.get(), out))) {
+                        while (!cacheQueue.offer(out)) {
                             waitBeforeRetry();
                         }
                         currFrame.incrementAndGet();
