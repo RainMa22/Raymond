@@ -41,7 +41,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: Artifact.zip
+        name: Artifact
         path: build/libs/Raymond-*-all.jar
 
     # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
