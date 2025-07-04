@@ -14,5 +14,6 @@ public abstract class s16beProviderInstance {
     }
 
     public abstract void seek(float second);
+    public abstract void setVolume(float volume);
     public void cleanup(){}
 }

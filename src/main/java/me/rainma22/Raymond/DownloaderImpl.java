@@ -29,12 +29,6 @@ public class DownloaderImpl extends Downloader {
     public DownloaderImpl() {
     }
 
-
-//    public static void main(String[] args) throws IOException, ReCaptchaException {
-//        DownloaderImpl downloader = new DownloaderImpl();
-//        downloader.execute(new URL("https://www.youtube.com/watch?v=9lNZ_Rnr7Jc"), "GET", null, null);
-//    }
-
     @Override
     public Response execute(Request request) throws IOException, ReCaptchaException, UnsupportedEncodingException {
         // Create an instance of HttpClient.
@@ -50,13 +44,11 @@ public class DownloaderImpl extends Downloader {
     }
 
     public Response execute(URL url, String method, byte[] dataToSend, Map<String, List<String>> header) throws IOException, ReCaptchaException, UnsupportedEncodingException {
-
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
 
         connection.addRequestProperty("User-Agent", USER_AGENT);
-//        connection.setDoInput(true);
         connection.setRequestMethod(method);
-        HashMap<String, List<String>> newHeader= new HashMap<>();
+        HashMap<String, List<String>> newHeader = new HashMap<>();
         if (header != null) newHeader.putAll(header);
         newHeader.putAll(downloadHeader);
         newHeader.forEach((key, values) -> {

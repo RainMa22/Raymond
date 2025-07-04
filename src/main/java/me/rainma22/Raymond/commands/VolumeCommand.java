@@ -12,8 +12,8 @@ import java.util.Map;
 
 public class VolumeCommand implements iCommand{
     private final Map<Guild, QueuedMusicHandler> handlerMap;
-    private static final int VOLUME_MAX = 100;
-    private static final String USAGE_MSG = String.format("Usage: `!volume [0-%d]`", VOLUME_MAX);
+    private static final int VOLUME_MAX = 150;
+    private static final String USAGE_MSG = String.format("To change volume: `!volume [0-%d]`", VOLUME_MAX);
     private static final String VOLUME_SET_MSG = "Volume Set to %.2f%%";
     private static final String BAD_COMMAND_ERR = "Bad Volume Command!";
     private static final String VOLUME_OUT_OF_RANGE_ERR = "Desired Volume not in valid range!";
@@ -33,7 +33,8 @@ public class VolumeCommand implements iCommand{
     public void accept(MessageReceivedEvent event, String[] cmds) {
         MessageChannelUnion msgChannel = event.getChannel();
         if (cmds.length != 2) {
-            msgChannel.sendMessage(BAD_COMMAND_ERR).queue();
+            int currentVolumePercent = Math.round(guildOptions.getVolumeOf(event.getGuild()) * 100);
+            event.getMessage().reply("Current Volume is "+ currentVolumePercent + "%").queue();
             printUsage(msgChannel.asTextChannel());
             return;
         }

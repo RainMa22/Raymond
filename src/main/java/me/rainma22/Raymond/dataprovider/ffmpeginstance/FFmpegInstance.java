@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class FFmpegInstance extends s16beProviderInstance {
+public class FFmpegInstance extends s16beProviderInstance {
     private static final List<String> OUTPARAM_FOR_FFMPEG =
             List.of("-f", "s16be",
                     "-codec:a", "pcm_s16be",
@@ -15,20 +15,24 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
                     "-xerror",
                     "pipe:1");
     protected static String ffmpegPath = "ffmpeg";
-    private static String SKIP_SEC = "-ss";
+    private static final String SKIP_SEC = "-ss";
+    private static final String VOLUME_OPTION = "\"volume=\"";
+    private static final String AUDIO_FILTER = "-filter:a";
+    private float volume = 1f;
+    private int currFrame = 0;
     private Process ffmpegProcess = null;
-    private String inPath;
+    protected String inPath;
 
     public FFmpegInstance(String inPath) {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
         this.inPath = inPath;
         cmds.addAll(List.of("-i", inPath));
+        cmds.addAll(List.of(AUDIO_FILTER, VOLUME_OPTION + volume));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
 //        System.out.println(processBuilder.command());
-//        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         try {
             ffmpegProcess = processBuilder.start();
@@ -50,13 +54,15 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         ArrayList<String> cmds = new ArrayList<>();
         cmds.add(ffmpegPath);
         cmds.addAll(List.of("-i", inPath));
+        cmds.addAll(List.of(AUDIO_FILTER, VOLUME_OPTION + volume));
         cmds.addAll(List.of(SKIP_SEC, Float.toString(second)));
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
-//        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
+        currFrame = Math.round(second * FRAMES_PER_SECOND);
         try {
-            cleanup();
+            if(inputStream != null) inputStream.close();
+            ffmpegProcess.destroy();
             ffmpegProcess = processBuilder.start();
             inputStream = ffmpegProcess.getInputStream();
         } catch (IOException exception) {
@@ -67,15 +73,26 @@ public abstract class FFmpegInstance extends s16beProviderInstance {
         }
     }
 
+    public void setVolume(float volume) {
+        this.volume = volume;
+        seek((float) currFrame /FRAMES_PER_SECOND);
+    }
+
     public boolean isInterrupted() {
-        return !ffmpegProcess.isAlive() && ffmpegProcess.exitValue() != 0;
+        return (!ffmpegProcess.isAlive() && ffmpegProcess.exitValue() != 0);
+    }
+
+    @Override
+    public byte[] provide(int length) throws IOException {
+        currFrame++;
+        return super.provide(length);
     }
 
     @Override
     public void cleanup() {
         try {
             inputStream.close();
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
             //ignored
         }
         inputStream = null;

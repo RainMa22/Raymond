@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class QueuedMusicHandler implements AudioSendHandler {
     //    static final String BASE_URL = "https://www.youtube.com/watch?v=";
@@ -35,8 +37,8 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private final VoiceChannel voiceChannel;
     private final TextChannel originChannel;
     private s16beProviderInstance providerInstance;
+    private float volume = 1f;
     private byte[] nextData;
-    private float volume = 1.0f;
 
     public QueuedMusicHandler(AudioManager manager, VoiceChannel voiceChannel, TextChannel originChannel) {
         super();
@@ -73,7 +75,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
         AudioStream audioStream = extractor.getAudioStreams().stream().reduce((accumulator, stream) -> {
             if (accumulator.getBitrate() < stream.getBitrate()) return stream;
             else return accumulator;
-        }).get();
+        }).orElseThrow();
         String contentURL = audioStream.getContent();
         String query = url.getQuery();
         int startTime = 0;
@@ -82,11 +84,12 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 try{
                     startTime = Integer.parseInt(param.substring(2));
                 }catch (NumberFormatException formatException){
-                    formatException.printStackTrace();
+                    Logger.getAnonymousLogger().log(Level.SEVERE, "bad time format: " + param, formatException);
                 }
             }
         }
         providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE, startTime);
+        providerInstance.setVolume(volume);
         //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
         manager.openAudioConnection(voiceChannel);
     }
@@ -163,9 +166,9 @@ public class QueuedMusicHandler implements AudioSendHandler {
         //0.02 second
         //48000 samples/channel/seconds * 0.02 seconds/20 ms = 960 samples/20ms
         // * 2 bytes/sample * 2 channel = 3840 bytes/2 channel/20ms
-        for (int i = 0; i < nextData.length; i++) {
-            nextData[i] = (byte) ((nextData[i]&0xFF) * volume);
-        }
+//        for (int i = 0; i < nextData.length; i++) {
+//            nextData[i] = (byte) ((nextData[i]&0xFF) * volume);
+//        }
         return ByteBuffer.wrap(nextData);
     }
 
@@ -174,11 +177,9 @@ public class QueuedMusicHandler implements AudioSendHandler {
         return false;
     }
 
-    public float getVolume() {
-        return volume;
-    }
-
     public void setVolume(float volume) {
         this.volume = volume;
+        if(providerInstance == null) return;
+        providerInstance.setVolume(volume);
     }
 }
