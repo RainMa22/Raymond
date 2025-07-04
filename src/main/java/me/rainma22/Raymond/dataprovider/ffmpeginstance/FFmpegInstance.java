@@ -16,7 +16,7 @@ public class FFmpegInstance extends s16beProviderInstance {
                     "pipe:1");
     protected static String ffmpegPath = "ffmpeg";
     private static final String SKIP_SEC = "-ss";
-    private static final String VOLUME_OPTION = "\"volume=\"";
+    private static final String VOLUME_OPTION = "volume=";
     private static final String AUDIO_FILTER = "-filter:a";
     private float volume = 1f;
     private int currFrame = 0;
