@@ -1,13 +1,13 @@
 plugins {
     id("java")
     id "application"
-    id("com.gradleup.shadow") version "8.3.1"
+    id("com.gradleup.shadow") version "9.4.0"
 }
 group = "me.rainma22.Raymond"
 application.mainClass = group + "." + "Main"
 
 version = "1.0-SNAPSHOT"
-String jdaVersion = "5.6.+"
+String jdaVersion = "6.3.+"
 String newPipeVer = "v0.26.+"
 
 repositories {
@@ -21,18 +21,27 @@ dependencies {
     implementation("com.github.teamnewpipe:NewPipeExtractor:$newPipeVer")
     implementation "org.apache.commons:commons-lang3:3.17.0"
     implementation 'org.json:json:20240303'
+    implementation("club.minnced:jdave-api:0.1.7")
 
+    // Compiled natives for libdave for the specified platform
+    implementation("club.minnced:jdave-native-linux-x86-64:0.1.7")
+    implementation("club.minnced:jdave-native-linux-aarch64:0.1.7")
+    implementation("club.minnced:jdave-native-win-x86-64:0.1.7")
+    implementation("club.minnced:jdave-native-darwin:0.1.7")
+    
+    
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
-//    options.isIncremental = true
+    //    options.isIncremental = true
     options.compilerArgs << "-Xlint:deprecation"
     // Set this to the version of java you want to use,
     // the minimum required for JDA is 1.8
-    sourceCompatibility = "11"
+    // require jdk25 for JDave to work... Not optimal
+    sourceCompatibility = "25"
 }
 
 tasks.withType(Zip).configureEach{
