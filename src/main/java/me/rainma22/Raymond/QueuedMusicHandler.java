@@ -9,9 +9,7 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.schabi.newpipe.extractor.NewPipe;
-import org.schabi.newpipe.extractor.downloader.Downloader;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
-import org.schabi.newpipe.extractor.localization.Localization;
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor;
 import org.schabi.newpipe.extractor.stream.AudioStream;
 
@@ -21,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 import java.util.List;
+import me.rainma22.Raymond.Debug.Debugger;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
@@ -33,7 +32,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NO_STREAM_FOUND_ERR = "Unable to find audio stream for: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
 
-    private final Downloader downloader;
     private final LinkedBlockingQueue<URL> songQueue;
     private final AudioManager manager;
     private final VoiceChannel voiceChannel;
@@ -45,7 +43,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
 
     public QueuedMusicHandler(AudioManager manager, VoiceChannel voiceChannel, TextChannel originChannel) {
         super();
-        downloader = new DownloaderImpl();
         songQueue = new LinkedBlockingQueue<>();
         this.originChannel = originChannel;
         this.manager = manager;
@@ -72,7 +69,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
         if (url == null) {
             return;
         }
-        NewPipe.init(downloader, new Localization("CA", "en"));
         manager.openAudioConnection(voiceChannel);
         YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
                 .getStreamExtractor(url.toString());
@@ -85,8 +81,10 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 .filter((as) -> as.getCodec().equals(globals.getPreferredEncodingIn()))
                 .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
                 //fallback on other encoding
-                .or(() -> streams.stream()
-                                 .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)) 
+                .or(() -> {
+                    Debugger.getInstance().log("Unable to find Opus stream, trying to fall back");
+                    return streams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
+                })
                 // if no stream exists, throw
                 .orElseThrow(() -> new IOException(String.format(NO_STREAM_FOUND_ERR, url.toString())));
 
@@ -98,7 +96,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 try {
                     startTime = Integer.parseInt(param.substring(2));
                 } catch (NumberFormatException formatException) {
-//                    Logger.getAnonymousLogger().log(Level.SEVERE, "bad time format: " + param, formatException);
+                    Debugger.getInstance().log("bad time format: " + param);
                 }
             }
         }
@@ -122,7 +120,12 @@ public class QueuedMusicHandler implements AudioSendHandler {
         int position = songQueue.size();
         songQueue.add(url);
         if (position == 0) {
-            loadURL(url);
+            try {
+                loadURL(url);
+            } catch (ExtractionException | IOException e) {
+                songQueue.poll();
+                throw e;
+            }
         }
         return position;
     }
@@ -135,20 +138,21 @@ public class QueuedMusicHandler implements AudioSendHandler {
     @Nullable
     public URL loadNextSong() {
         songQueue.poll(); //remove playing url from queue
-        URL out = songQueue.peek();
+        URL nextUrl = songQueue.peek();
         try {
-            loadURL(out);
+            loadURL(nextUrl);
             originChannel.sendMessage(String.format(NEXT_SONG_MSG, songQueue.peek())).queue();
         } catch (Exception e) {
             originChannel.sendMessage(
-                    String.format(NEXT_SONG_ERR, StringUtils.join(e.getStackTrace(), "\n"))).queue();
+                    String.format(NEXT_SONG_ERR, e.getMessage())).queue();
+            Debugger.getInstance().log(StringUtils.join(e.getStackTrace()));
         }
-        return out;
+        return nextUrl;
     }
 
     public void stop() {
         clearQueue();
-        loadNextSong();
+        clearProvider();
         manager.closeAudioConnection();
         originChannel.sendMessage(STOPPED_MSG).queue();
     }

@@ -14,17 +14,24 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 public class DownloaderImpl extends Downloader {
+
     private static Map<String, List<String>> downloadHeader;
 
     static {
         downloadHeader = new HashMap<>();
-        downloadHeader = Map.of("range", List.of("0-"));
+//        downloadHeader = Map.of("range", List.of("0-"));
     }
 
-    private static final String USER_AGENT
-            = "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36";
+    private static final List<String> USER_AGENTS
+            = List.of("Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36",
+                    "Mozilla/5.0 (Linux; Android 15; SM-S931B Build/AP3A.240905.015.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/127.0.6533.103 Mobile Safari/537.36",
+                    "Mozilla/5.0 (iPhone17,5; CPU iPhone OS 18_3_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 FireKeepers/1.7.0",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0",
+                    "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36");
 
     public DownloaderImpl() {
     }
@@ -45,17 +52,22 @@ public class DownloaderImpl extends Downloader {
 
     public Response execute(URL url, String method, byte[] dataToSend, Map<String, List<String>> header) throws IOException, ReCaptchaException, UnsupportedEncodingException {
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-
-        connection.addRequestProperty("User-Agent", USER_AGENT);
+        String ua = USER_AGENTS.get(RandomUtils.insecure().randomInt(0, USER_AGENTS.size()));
+        connection.addRequestProperty("User-Agent", ua);
         connection.setRequestMethod(method);
         HashMap<String, List<String>> newHeader = new HashMap<>();
-        if (header != null) newHeader.putAll(header);
+        if (header != null) {
+            newHeader.putAll(header);
+        }
         newHeader.putAll(downloadHeader);
         newHeader.forEach((key, values) -> {
             values.forEach((value) -> {
                 connection.addRequestProperty(key, value);
             });
         });
+        if(!connection.getRequestProperties().containsKey("si")){
+            connection.addRequestProperty("si", RandomStringUtils.insecure().nextAlphanumeric(16));
+        }
         if (dataToSend != null) {
             connection.setDoOutput(true);
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
@@ -81,12 +93,9 @@ public class DownloaderImpl extends Downloader {
 
         InputStream responseStream = connection.getInputStream();
 
-
         byte[] in = responseStream.readAllBytes();
 
-
         String dataString = new String(in);
-
 
         Response response = new Response(status, connection.getResponseMessage(),
                 connection.getHeaderFields(), dataString, url.toString());

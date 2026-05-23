@@ -32,7 +32,6 @@ public class FFmpegInstance extends s16beProviderInstance {
         cmds.addAll(OUTPARAM_FOR_FFMPEG);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmds);
-//        System.out.println(processBuilder.command());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         try {
             ffmpegProcess = processBuilder.start();

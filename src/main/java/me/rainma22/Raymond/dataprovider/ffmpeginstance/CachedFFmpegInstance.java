@@ -70,6 +70,7 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
     @Override
     public void cleanup() {
         super.cleanup();
+        instance.cleanup();
         loader.shouldExit.set(true);
     }
 
