@@ -1,7 +1,5 @@
 package me.rainma22.Raymond;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import me.rainma22.Raymond.dataprovider.ffmpeginstance.CachedFFmpegInstance;
 import me.rainma22.Raymond.dataprovider.s16beProviderInstance;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
@@ -18,11 +16,11 @@ import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExt
 import org.schabi.newpipe.extractor.stream.AudioStream;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
-import me.rainma22.Raymond.Debug.Debugger;
+import java.util.function.Function;
+import java.util.List;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
@@ -41,6 +39,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private final VoiceChannel voiceChannel;
     private final TextChannel originChannel;
     private s16beProviderInstance providerInstance;
+    private GlobalOptions globals;
     private float volume = 1f;
     private byte[] nextData;
 
@@ -50,6 +49,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
         songQueue = new LinkedBlockingQueue<>();
         this.originChannel = originChannel;
         this.manager = manager;
+        globals = GlobalOptions.getGlobalOptions();
         manager.setSendingHandler(this);
 
         this.voiceChannel = voiceChannel;
@@ -77,26 +77,17 @@ public class QueuedMusicHandler implements AudioSendHandler {
         YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
                 .getStreamExtractor(url.toString());
         extractor.fetchPage();
-        var streams = extractor.getAudioStreams();
-//        Debugger db = Debugger.getInstance();
-//        try (PrintStream p = new PrintStream(new FileOutputStream("log.txt"))) {
-//            streams.stream()
-//                    .forEach((as) -> {
-//
-//                        db.setOut(p);
-//                        db.log(url.toString());
-//                        db.log(as.getBitrate());
-//                        db.log(as.getAverageBitrate());
-//                        db.log(as.getCodec());
-//                        db.log(as.getQuality());
-//                    });
-//        } catch (FileNotFoundException ex) {
-//            //ignored
-//        } finally {
-//            db.setOut(System.out);
-//        }
+        Double preferredBitrate = globals.getPreferredInBitrate_kbs();
+        Function<AudioStream, Double> valueof = (as) -> Math.abs(as.getAverageBitrate() - preferredBitrate);
+
+        List<AudioStream> streams = extractor.getAudioStreams();
         AudioStream audioStream = streams.stream()
-                .findFirst()
+                .filter((as) -> as.getCodec().equals(globals.getPreferredEncodingIn()))
+                .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
+                //fallback on other encoding
+                .or(() -> streams.stream()
+                                 .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)) 
+                // if no stream exists, throw
                 .orElseThrow(() -> new IOException(String.format(NO_STREAM_FOUND_ERR, url.toString())));
 
         String contentURL = audioStream.getContent();

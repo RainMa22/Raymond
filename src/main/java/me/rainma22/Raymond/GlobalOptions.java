@@ -15,6 +15,8 @@ public class GlobalOptions extends JSONObject{
         BLANK_JSON.put("ffmpeg_path", "ffmpeg");
         BLANK_JSON.put("cache_size","2500");
         BLANK_JSON.put("num_retries", "50");
+        BLANK_JSON.put("preferred_encoding_in","opus");
+        BLANK_JSON.put("preferred_bitrate_kbs_in","64");
     }
 
     public static GlobalOptions getGlobalOptions() {
@@ -38,6 +40,14 @@ public class GlobalOptions extends JSONObject{
 
     public Integer getNumRetries(){
         return getInt("num_retries");
+    }
+    
+    public String getPreferredEncodingIn(){
+        return getString("preferred_encoding_in");
+    }
+    
+    public Double getPreferredInBitrate_kbs(){
+        return getDouble("preferred_bitrate_kbs_in");
     }
 
     private GlobalOptions(Path filePath){
