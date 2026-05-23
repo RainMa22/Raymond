@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 public abstract class s16beProviderInstance {
     public static final int FRAMES_PER_SECOND = 50;
+    public final boolean isOpus = false;
     protected InputStream inputStream = InputStream.nullInputStream();
     public byte[] provide(int length) throws IOException {
         byte[] out = inputStream.readNBytes(length);
@@ -15,5 +16,11 @@ public abstract class s16beProviderInstance {
 
     public abstract void seek(float second);
     public abstract void setVolume(float volume);
-    public void cleanup(){}
+    public void cleanup(){
+        try {
+            inputStream.close();
+        } catch (IOException ex) {
+        }
+        inputStream = InputStream.nullInputStream();
+    }
 }

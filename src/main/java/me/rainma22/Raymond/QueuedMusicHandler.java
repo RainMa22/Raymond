@@ -20,6 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
 import java.util.List;
 import me.rainma22.Raymond.Debug.Debugger;
+import me.rainma22.Raymond.Utils.RetryUtils;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
@@ -31,7 +32,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NEXT_SONG_ERR = "Encountered an Exception while loading next song: %s";
     private static final String NO_STREAM_FOUND_ERR = "Unable to find audio stream for: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
-
     private final LinkedBlockingQueue<URL> songQueue;
     private final AudioManager manager;
     private final VoiceChannel voiceChannel;
@@ -76,33 +76,43 @@ public class QueuedMusicHandler implements AudioSendHandler {
         Double preferredBitrate = globals.getPreferredInBitrate_kbs();
         Function<AudioStream, Double> valueof = (as) -> Math.abs(as.getAverageBitrate() - preferredBitrate);
 
-        List<AudioStream> streams = extractor.getAudioStreams();
-        AudioStream audioStream = streams.stream()
-                .filter((as) -> as.getCodec().equals(globals.getPreferredEncodingIn()))
-                .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
-                //fallback on other encoding
-                .or(() -> {
-                    Debugger.getInstance().log("Unable to find Opus stream, trying to fall back");
-                    return streams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
-                })
-                // if no stream exists, throw
-                .orElseThrow(() -> new IOException(String.format(NO_STREAM_FOUND_ERR, url.toString())));
-
-        String contentURL = audioStream.getContent();
-        String query = url.getQuery();
-        int startTime = 0;
-        for (String param : query.split("&")) {
-            if (param.startsWith("t=")) {
-                try {
-                    startTime = Integer.parseInt(param.substring(2));
-                } catch (NumberFormatException formatException) {
-                    Debugger.getInstance().log("bad time format: " + param);
+        RetryUtils.RetryingTask loadAudio = () -> {
+            try {
+                List<AudioStream> streams = extractor.getAudioStreams();
+                if (streams.isEmpty()) {
+                    return false;
                 }
+                AudioStream audioStream = streams.stream()
+                        .filter((as) -> as.getCodec().equals(globals.getPreferredEncodingIn()))
+                        .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
+                        //fallback on other encoding
+                        .or(() -> {
+                            Debugger.getInstance().log("Unable to find Opus stream, trying to fall back");
+                            return streams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
+                        }).get();
+                String contentURL = audioStream.getContent();
+                String query = url.getQuery();
+                int startTime = 0;
+                for (String param : query.split("&")) {
+                    if (param.startsWith("t=")) {
+                        try {
+                            startTime = Integer.parseInt(param.substring(2));
+                        } catch (NumberFormatException formatException) {
+                            Debugger.getInstance().log("bad time format: " + param);
+                        }
+                    }
+                }
+                providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE, startTime);
+                providerInstance.setVolume(volume);
+                //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
+                return true;
+            } catch (ExtractionException e) {
+                return false;
             }
+        };
+        if (!loadAudio.isSuccess()) {
+            throw new IOException(String.format(NO_STREAM_FOUND_ERR, url.toString()));
         }
-        providerInstance = new CachedFFmpegInstance(contentURL, SAMPLE_SIZE, startTime);
-        providerInstance.setVolume(volume);
-        //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
     }
 
     public void seekCurrentMusic(float second) {
@@ -112,7 +122,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
     }
 
     /**
-     * Queues the url and returns its position on queue note: returns 0 if song
+     * Queues the URL and returns its position on queue note: returns 0 if song
      * would be played immediately
      *
      */
@@ -164,16 +174,14 @@ public class QueuedMusicHandler implements AudioSendHandler {
         }
         try {
             nextData = providerInstance.provide(SAMPLE_SIZE);
-            return true;
-        } catch (Exception e) {
-            originChannel.sendMessage(
-                    String.format(SONG_ERR, StringUtils.join(e.getStackTrace(), "\n"))).queue();
-        }
-        try {
+            if (nextData.length != 0) {
+                return true;
+            }
             loadNextSong();
             return canProvide(); //refresh to see if song can be provided
         } catch (Exception e) {
-            clearQueue();
+            originChannel.sendMessage(
+                    String.format(SONG_ERR, StringUtils.join(e.getStackTrace(), "\n"))).queue();
             return false;
         }
     }
@@ -188,7 +196,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
 
     @Override
     public boolean isOpus() {
-        return false;
+        return providerInstance != null && providerInstance.isOpus;
     }
 
     public void setVolume(float volume) {

@@ -89,12 +89,7 @@ public class FFmpegInstance extends s16beProviderInstance {
 
     @Override
     public void cleanup() {
-        try {
-            inputStream.close();
-        } catch (IOException | NullPointerException e) {
-            //ignored
-        }
-        inputStream = null;
+        super.cleanup();
         ffmpegProcess.destroy();
     }
 }
