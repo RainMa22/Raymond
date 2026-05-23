@@ -83,7 +83,7 @@ public class PlayCommand implements iCommand {
 
         } catch (IOException e) {
             Logger.getAnonymousLogger().log(Level.SEVERE, "IOException was thrown", e);
-            msgChannel.sendMessage("ERROR! Unknown Error\n").queue();
+            msgChannel.sendMessage("ERROR! "+e.getMessage() +"\n").queue();
         }
 
     }
