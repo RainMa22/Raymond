@@ -8,7 +8,6 @@ public class RetryUtils {
             int nRetries = GlobalOptions.getGlobalOptions().getNumRetries();
             for(int retries = 0; retries < nRetries; retries++){
                 if(execOnce()) return true;
-                else continue;
             }
             return false;
         }

@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.List;
 import me.rainma22.Raymond.Debug.Debugger;
 import me.rainma22.Raymond.Utils.RetryUtils;
+import org.schabi.newpipe.extractor.StreamingService;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
@@ -33,6 +34,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NO_STREAM_FOUND_ERR = "Unable to find audio stream for: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
     private final LinkedBlockingQueue<URL> songQueue;
+    private StreamingService service = null;
     private final AudioManager manager;
     private final VoiceChannel voiceChannel;
     private final TextChannel originChannel;
@@ -70,14 +72,17 @@ public class QueuedMusicHandler implements AudioSendHandler {
             return;
         }
         manager.openAudioConnection(voiceChannel);
-        YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) NewPipe.getService("YouTube")
-                .getStreamExtractor(url.toString());
-        extractor.fetchPage();
+        
         Double preferredBitrate = globals.getPreferredInBitrate_kbs();
         Function<AudioStream, Double> valueof = (as) -> Math.abs(as.getAverageBitrate() - preferredBitrate);
 
         RetryUtils.RetryingTask loadAudio = () -> {
             try {
+                if(service == null) {
+                    service = NewPipe.getService("YouTube");
+                }
+                YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) service.getStreamExtractor(url.toString());
+                extractor.fetchPage();
                 List<AudioStream> streams = extractor.getAudioStreams();
                 if (streams.isEmpty()) {
                     return false;
@@ -106,7 +111,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 providerInstance.setVolume(volume);
                 //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
                 return true;
-            } catch (ExtractionException e) {
+            } catch (IOException | ExtractionException e) {
                 return false;
             }
         };
