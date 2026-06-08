@@ -18,14 +18,14 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
-import java.util.List;
 import me.rainma22.Raymond.Debug.Debugger;
 import me.rainma22.Raymond.Utils.RetryUtils;
 import org.schabi.newpipe.extractor.StreamingService;
+import org.schabi.newpipe.extractor.stream.Stream;
+import org.schabi.newpipe.extractor.stream.VideoStream;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
-    //    static final String BASE_URL = "https://www.youtube.com/watch?v=";
     private static final int SAMPLE_SIZE = 3840;
     private static final String NEXT_SONG_MSG = "Song Done, loading next song: %s";
     private static final String QUEUE_CLEARED_MSG = "Queue has been cleared.";
@@ -33,11 +33,13 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NEXT_SONG_ERR = "Encountered an Exception while loading next song: %s";
     private static final String NO_STREAM_FOUND_ERR = "Unable to find audio stream for: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
+    private String preferredEncoding;
     private final LinkedBlockingQueue<URL> songQueue;
     private StreamingService service = null;
     private final AudioManager manager;
     private final VoiceChannel voiceChannel;
     private final TextChannel originChannel;
+    private Debugger debug;
     private s16beProviderInstance providerInstance;
     private GlobalOptions globals;
     private float volume = 1f;
@@ -49,8 +51,9 @@ public class QueuedMusicHandler implements AudioSendHandler {
         this.originChannel = originChannel;
         this.manager = manager;
         globals = GlobalOptions.getGlobalOptions();
+        preferredEncoding = globals.getPreferredEncodingIn();
         manager.setSendingHandler(this);
-
+        debug = Debugger.getInstance();
         this.voiceChannel = voiceChannel;
     }
 
@@ -72,30 +75,44 @@ public class QueuedMusicHandler implements AudioSendHandler {
             return;
         }
         manager.openAudioConnection(voiceChannel);
-        
+
         Double preferredBitrate = globals.getPreferredInBitrate_kbs();
         Function<AudioStream, Double> valueof = (as) -> Math.abs(as.getAverageBitrate() - preferredBitrate);
 
         RetryUtils.RetryingTask loadAudio = () -> {
             try {
-                if(service == null) {
+                if (service == null) {
                     service = NewPipe.getService("YouTube");
                 }
                 YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) service.getStreamExtractor(url.toString());
                 extractor.fetchPage();
-                List<AudioStream> streams = extractor.getAudioStreams();
-                if (streams.isEmpty()) {
-                    return false;
+                var astreams = extractor.getAudioStreams();
+                var vstreams = extractor.getVideoStreams();
+                if (astreams.isEmpty()) {
+                    debug.log("Audio stream is empty for some reason");
+                    if (vstreams.isEmpty()) {
+                        debug.log("Video stream is empty too for some reason");
+                    }
                 }
-                AudioStream audioStream = streams.stream()
-                        .filter((as) -> as.getCodec().equals(globals.getPreferredEncodingIn()))
+
+                Stream stream = astreams.stream()
+                        .filter((as) -> as.getCodec().equals(preferredEncoding))
                         .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
                         //fallback on other encoding
                         .or(() -> {
-                            Debugger.getInstance().log("Unable to find Opus stream, trying to fall back");
-                            return streams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
-                        }).get();
-                String contentURL = audioStream.getContent();
+                            Debugger.getInstance().log("Unable to find" + preferredEncoding + "stream, trying to fall back");
+                            return astreams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
+                        }).orElse(null);
+                if (stream == null) {
+                    Debugger.getInstance().log("Unable to find" + preferredEncoding + " Audio stream, trying to fall back to video stream");
+                    stream = vstreams.getFirst();
+                    if (stream != null) {
+                        debug.log("Found a video stream:");
+                        debug.LogStreamInfo(vstreams.getFirst());
+                    }
+                }
+
+                String contentURL = stream.getContent();
                 String query = url.getQuery();
                 int startTime = 0;
                 for (String param : query.split("&")) {

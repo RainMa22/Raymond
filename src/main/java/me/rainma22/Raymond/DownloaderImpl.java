@@ -14,6 +14,7 @@ import java.net.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import me.rainma22.Raymond.Debug.Debugger;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
@@ -27,7 +28,7 @@ public class DownloaderImpl extends Downloader {
     }
 
     private static final List<String> USER_AGENTS
-            = List.of("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0");
+            = List.of("Mozilla/5.0 (X11; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0");
 
     public DownloaderImpl() {
     }

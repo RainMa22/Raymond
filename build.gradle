@@ -39,7 +39,6 @@ tasks.withType(JavaCompile).configureEach {
     //    options.isIncremental = true
     options.compilerArgs << "-Xlint:deprecation"
     // Set this to the version of java you want to use,
-    // the minimum required for JDA is 1.8
     // require jdk25 for JDave to work... Not optimal
     sourceCompatibility = "25"
 }

@@ -1,6 +1,8 @@
 package me.rainma22.Raymond.Debug;
 
 import java.io.PrintStream;
+import org.schabi.newpipe.extractor.stream.AudioStream;
+import org.schabi.newpipe.extractor.stream.VideoStream;
 
 /**
  *
@@ -41,6 +43,24 @@ public class Debugger {
     public void log(Object x, int logLevel) {
         if (logLevel <= this.logLevel) {
             this.out.println(x);
+        }
+    }
+
+    public void LogStreamInfo(VideoStream stream) {
+        if (stream == null) {
+            log(null);
+        } else {
+            log(String.join(" ", stream.getContent(), stream.getCodec(), stream.getQuality(), stream.getResolution(),
+                    String.valueOf(stream.getBitrate())));
+        }
+    }
+
+    public void LogStreamInfo(AudioStream stream) {
+        if (stream == null) {
+            log(null);
+        } else {
+            log(String.join(" ", stream.getContent(), stream.getCodec(), stream.getQuality(),
+                    String.valueOf(stream.getBitrate())));
         }
     }
 }
