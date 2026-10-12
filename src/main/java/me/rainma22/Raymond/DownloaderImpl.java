@@ -11,35 +11,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import me.rainma22.Raymond.Debug.Debugger;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 
 public class DownloaderImpl extends Downloader {
+    private HttpClient client;
+    private Map<String, List<String>> downloadHeader = new HashMap<>();
 
-    private static Map<String, List<String>> downloadHeader;
-
-    static {
-        downloadHeader = new HashMap<>();
-//        downloadHeader = Map.of("range", List.of("0-"));
-    }
-
-    private static final List<String> USER_AGENTS
-            = List.of("Mozilla/5.0 (X11; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0");
+    private static final String USER_AGENT
+            = "Mozilla/5.0 (X11; Linux x86_64; rv:150.0) Gecko/20100101 Firefox/150.0";
 
     public DownloaderImpl() {
+        var builder = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .connectTimeout(Duration.ofSeconds(1));
+        client = builder
+                .build();
     }
 
     @Override
     public Response execute(Request request) throws IOException, ReCaptchaException, UnsupportedEncodingException {
-        // Create an instance of HttpClient.
         URL target;
         try {
-            target = new URI(request.url()).toURL();
-        } catch (URISyntaxException e) {
+            target = URI.create(request.url()).toURL();
+        } catch (IllegalArgumentException e) {
             MalformedURLException mue = new MalformedURLException();
             mue.addSuppressed(e);
             throw mue;
@@ -48,55 +52,35 @@ public class DownloaderImpl extends Downloader {
     }
 
     public Response execute(URL url, String method, byte[] dataToSend, Map<String, List<String>> header) throws IOException, ReCaptchaException, UnsupportedEncodingException {
-        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
-        String ua = USER_AGENTS.get(RandomUtils.insecure().randomInt(0, USER_AGENTS.size()));
-        connection.addRequestProperty("User-Agent", ua);
-        connection.setRequestMethod(method);
-        HashMap<String, List<String>> newHeader = new HashMap<>();
-        if (header != null) {
-            newHeader.putAll(header);
-        }
-        newHeader.putAll(downloadHeader);
-        newHeader.forEach((key, values) -> {
-            values.forEach((value) -> {
-                connection.addRequestProperty(key, value);
-            });
-        });
-        if(!connection.getRequestProperties().containsKey("si")){
-            connection.addRequestProperty("si", RandomStringUtils.insecure().nextAlphanumeric(16));
-        }
-        if (dataToSend != null) {
-            connection.setDoOutput(true);
-            DataOutputStream out = new DataOutputStream(connection.getOutputStream());
-            out.write(dataToSend);
-            out.flush();
-            out.close();
-        }
-        int status = connection.getResponseCode();
-
-        if (status == HttpURLConnection.HTTP_MOVED_TEMP
-                || status == HttpURLConnection.HTTP_MOVED_PERM) {
-            String location = connection.getHeaderField("Location");
-            URL newUrl;
-            try {
-                newUrl = new URI(location).toURL();
-            } catch (URISyntaxException e) {
-                MalformedURLException mue = new MalformedURLException();
-                mue.addSuppressed(e);
-                throw mue;
+        try {
+            HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(url.toURI());
+            reqBuilder.header("User-Agent", USER_AGENT);
+            reqBuilder.method(method, dataToSend == null ? HttpRequest.BodyPublishers.noBody()
+                    : HttpRequest.BodyPublishers.ofByteArray(dataToSend));
+            HashMap<String, List<String>> newHeader = new HashMap<>();
+            if (header != null) {
+                newHeader.putAll(header);
             }
-            return execute(newUrl, method, dataToSend, header);
+            newHeader.putAll(downloadHeader);
+            newHeader.forEach((key, values) -> {
+                values.forEach((value) -> {
+                    reqBuilder.header(key, value);
+                });
+            });
+            if (!newHeader.containsKey("si")) {
+                reqBuilder.header("si", RandomStringUtils.insecure().nextAlphanumeric(16));
+            }
+
+            HttpRequest req = reqBuilder.build();
+            HttpResponse<String> res;
+            res = client.send(req, HttpResponse.BodyHandlers.ofString());
+            int status = res.statusCode();
+            String dataString = res.body();
+
+            return new Response(status, "",
+                    res.headers().map(), dataString, url.toString());
+        } catch (URISyntaxException | InterruptedException e) {
+            throw new IOException(e);
         }
-
-        InputStream responseStream = connection.getInputStream();
-
-        byte[] in = responseStream.readAllBytes();
-
-        String dataString = new String(in);
-
-        Response response = new Response(status, connection.getResponseMessage(),
-                connection.getHeaderFields(), dataString, url.toString());
-
-        return response;
     }
 }

@@ -39,7 +39,7 @@ public class OggReader implements AutoCloseable {
         return state.equals(State.END) || state.equals(State.INVALID);
     }
 
-    public State NextState() throws IOException {
+    private State NextState() throws IOException {
         int readAmount;
         int readOffset = 0;
         byte[] window = buffer.array();
