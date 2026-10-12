@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.apache.commons.lang3.concurrent.LazyInitializer;
-import org.jetbrains.annotations.Nullable;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
 import org.schabi.newpipe.extractor.services.youtube.extractors.YoutubeStreamExtractor;
@@ -183,7 +182,6 @@ public class QueuedMusicHandler implements AudioSendHandler {
      *
      * @return the current URL playing if the URL is valid, else return null
      */
-    @Nullable
     public URL loadNextSong() {
         songQueue.poll(); //remove playing url from queue
         URL nextUrl = songQueue.peek();
