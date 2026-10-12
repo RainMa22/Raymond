@@ -4,8 +4,7 @@ import me.rainma22.Raymond.GlobalOptions;
 import me.rainma22.Raymond.dataprovider.s16beProviderInstance;
 
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -24,8 +23,8 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
         this.frameSize = frameSize;
         int cacheSize = GlobalOptions.getGlobalOptions().getCacheSize();
         NUM_RETRIES = GlobalOptions.getGlobalOptions().getNumRetries();
-        if (cacheSize <= 0) cacheQueue = new LinkedBlockingQueue<>();
-        else cacheQueue = new LinkedBlockingQueue<>(cacheSize);
+        if (cacheSize <= 0) cacheQueue = new LinkedBlockingDeque<>();
+        else cacheQueue = new ArrayBlockingQueue<>(cacheSize);
         seek(second);
         loader.start();
     }
@@ -35,11 +34,6 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
         if (frameSize != length) throw new IOException(String.format("%d != %d !!!", frameSize, length));
         byte[] out;
         while (!loader.isDone.get() && cacheQueue.isEmpty()) {
-            synchronized (loader) {
-                loader.notify();
-            }
-        }
-        if (loader.isDone.get() || cacheQueue.size() < cacheQueue.remainingCapacity()){
             synchronized (loader) {
                 loader.notify();
             }
@@ -55,9 +49,7 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
         synchronized (loader) {
             cacheQueue.clear();
             loader.setCurrFrame(currFrame);
-            if(loader.isDone.get()){
-                loader.isDone.set(false);
-            }
+            loader.isDone.set(false);
         }
     }
 
@@ -116,7 +108,10 @@ public class CachedFFmpegInstance extends s16beProviderInstance {
                         if (out.length == 0) {
                             if (instance.isInterrupted())
                                 throw new IOException("process is interrupted");
-                            else isDone.set(true);
+                            else {
+                                isDone.set(true);
+                                continue;
+                            }
                         }
                         while (!cacheQueue.offer(out)) {
                             waitBeforeRetry();
