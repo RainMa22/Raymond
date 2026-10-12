@@ -17,9 +17,8 @@ repositories {
 
 dependencies {
     implementation("net.dv8tion:JDA:$jdaVersion")
-    implementation('ch.qos.logback:logback-classic:1.5.13')
     implementation("com.github.teamnewpipe:NewPipeExtractor:$newPipeVer")
-    implementation "org.apache.commons:commons-lang3:3.17.0"
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
     implementation 'org.json:json:20240303'
     implementation("club.minnced:jdave-api:$jdaveVer")
 
@@ -28,7 +27,6 @@ dependencies {
     implementation("club.minnced:jdave-native-linux-aarch64:$jdaveVer")
     implementation("club.minnced:jdave-native-win-x86-64:$jdaveVer")
     implementation("club.minnced:jdave-native-darwin:$jdaveVer")
-    
     
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
