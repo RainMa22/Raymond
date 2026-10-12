@@ -7,6 +7,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.concurrent.ConcurrentException;
+import org.apache.commons.lang3.concurrent.LazyInitializer;
 import org.jetbrains.annotations.Nullable;
 import org.schabi.newpipe.extractor.NewPipe;
 import org.schabi.newpipe.extractor.exceptions.ExtractionException;
@@ -16,13 +18,15 @@ import org.schabi.newpipe.extractor.stream.AudioStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Function;
+
 import me.rainma22.Raymond.Debug.Debugger;
 import me.rainma22.Raymond.Utils.RetryUtils;
 import org.schabi.newpipe.extractor.StreamingService;
 import org.schabi.newpipe.extractor.stream.Stream;
-import org.schabi.newpipe.extractor.stream.VideoStream;
 
 public class QueuedMusicHandler implements AudioSendHandler {
 
@@ -33,9 +37,19 @@ public class QueuedMusicHandler implements AudioSendHandler {
     private static final String NEXT_SONG_ERR = "Encountered an Exception while loading next song: %s";
     private static final String NO_STREAM_FOUND_ERR = "Unable to find audio stream for: %s";
     private static final String STOPPED_MSG = "Bot Stopped, Bye-bye!";
+
     private String preferredEncoding;
     private final LinkedBlockingQueue<URL> songQueue;
-    private StreamingService service = null;
+    private LazyInitializer<StreamingService> serviceInitializer = new LazyInitializer<>(){
+        @Override
+        public StreamingService get() throws ConcurrentException {
+            try {
+                return NewPipe.getService("YouTube");
+            } catch (ExtractionException e) {
+                throw new ConcurrentException(e);
+            }
+        }
+    };
     private final AudioManager manager;
     private final VoiceChannel voiceChannel;
     private final TextChannel originChannel;
@@ -81,9 +95,7 @@ public class QueuedMusicHandler implements AudioSendHandler {
 
         RetryUtils.RetryingTask loadAudio = () -> {
             try {
-                if (service == null) {
-                    service = NewPipe.getService("YouTube");
-                }
+                var service = serviceInitializer.get();
                 YoutubeStreamExtractor extractor = (YoutubeStreamExtractor) service.getStreamExtractor(url.toString());
                 extractor.fetchPage();
                 var astreams = extractor.getAudioStreams();
@@ -97,11 +109,11 @@ public class QueuedMusicHandler implements AudioSendHandler {
 
                 Stream stream = astreams.stream()
                         .filter((as) -> as.getCodec().equals(preferredEncoding))
-                        .min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1)
+                        .min(Comparator.comparingDouble(valueof::apply))
                         //fallback on other encoding
                         .or(() -> {
                             Debugger.getInstance().log("Unable to find" + preferredEncoding + "stream, trying to fall back");
-                            return astreams.stream().min((as1, as2) -> valueof.apply(as1) < valueof.apply(as2) ? -1 : 1);
+                            return Optional.ofNullable(astreams.getFirst());
                         }).orElse(null);
                 if (stream == null) {
                     Debugger.getInstance().log("Unable to find" + preferredEncoding + " Audio stream, trying to fall back to video stream");
@@ -111,7 +123,11 @@ public class QueuedMusicHandler implements AudioSendHandler {
                         debug.LogStreamInfo(vstreams.getFirst());
                     }
                 }
-
+                if (stream == null) {
+                    String msg = "No audio stream extracted! this is a bug";
+                    debug.log(msg);
+                    throw new IOException(msg);
+                }
                 String contentURL = stream.getContent();
                 String query = url.getQuery();
                 int startTime = 0;
@@ -128,12 +144,12 @@ public class QueuedMusicHandler implements AudioSendHandler {
                 providerInstance.setVolume(volume);
                 //FFMpeg convert to stereo, 48k sample rate, 16bit Big endian PCM audio and pipe back?
                 return true;
-            } catch (IOException | ExtractionException e) {
+            } catch (IOException | ExtractionException | ConcurrentException e) {
                 return false;
             }
         };
         if (!loadAudio.isSuccess()) {
-            throw new IOException(String.format(NO_STREAM_FOUND_ERR, url.toString()));
+            throw new IOException(String.format(NO_STREAM_FOUND_ERR, url));
         }
     }
 

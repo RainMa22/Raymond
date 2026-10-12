@@ -48,7 +48,7 @@ public class PlayCommand implements iCommand {
 
         Guild guild = event.getGuild();
         try {
-            QueuedMusicHandler handler = handlerMap.getOrDefault(guild, null);
+            QueuedMusicHandler handler = handlerMap.get(guild);
             if (handler == null) {
                 AudioManager manager = guild.getAudioManager();
                 VoiceChannel vc = null;
